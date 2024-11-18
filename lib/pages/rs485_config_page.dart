@@ -132,8 +132,7 @@ class _RS485WidgetState extends State<RS485Widget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // 指令码名字输入框
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 140),
+            IntrinsicWidth(
               child: TextField(
                   decoration: InputDecoration(
                     isDense: true,

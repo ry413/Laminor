@@ -219,8 +219,7 @@ class _AirConWidgetState extends State<AirConWidget> {
                     widget.airCon.id = value;
                   }),
               // 空调名输入框
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 240),
+              IntrinsicWidth(
                 child: TextField(
                     decoration: InputDecoration(
                       isDense: true,

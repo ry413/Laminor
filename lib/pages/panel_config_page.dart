@@ -186,8 +186,7 @@ class _PanelWidgetState extends State<PanelWidget> {
                 ),
 
                 // 面板名字输入框
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 240),
+                IntrinsicWidth(
                   child: TextField(
                       decoration: InputDecoration(
                         isDense: true,
@@ -219,66 +218,28 @@ class _PanelWidgetState extends State<PanelWidget> {
             ),
             SizedBox(height: 16),
             // 面板按钮们
-            if (widget.panel.type == PanelType.fourButton)
-              Container(
-                width: 275,
-                height: 275,
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(215, 216, 217, 1),
-                  border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
-                  borderRadius: BorderRadius.circular(12.0), // 设置圆角
-                ),
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  shrinkWrap: true,
-                  children: List.generate(widget.panel.buttons.length, (index) {
-                    return buildPanelButton(index, buttonIdControllers);
-                  }),
-                ),
-              )
-            else if (widget.panel.type == PanelType.sixButton)
-              Container(
-                width: 412,
-                height: 280,
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(215, 216, 217, 1),
-                  border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
-                  borderRadius: BorderRadius.circular(12.0), // 设置圆角
-                ),
-                child: GridView.count(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  shrinkWrap: true,
-                  children: List.generate(widget.panel.buttons.length, (index) {
-                    return buildPanelButton(index, buttonIdControllers);
-                  }),
-                ),
-              )
-            else if (widget.panel.type == PanelType.eightButton)
-              Container(
-                width: 550,
-                height: 280,
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(215, 216, 217, 1),
-                  border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
-                  borderRadius: BorderRadius.circular(12.0), // 设置圆角
-                ),
-                child: GridView.count(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  shrinkWrap: true,
-                  children: List.generate(widget.panel.buttons.length, (index) {
-                    return buildPanelButton(index, buttonIdControllers);
-                  }),
-                ),
-              )
+            Container(
+              width: calculateWidth(widget.panel.type,
+                  buttonSize: 175, spacing: 8, padding: 8),
+              height: calculateHeight(widget.panel.type,
+                  buttonSize: 175, spacing: 8, padding: 8),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(215, 216, 217, 1),
+                border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: GridView.count(
+                crossAxisCount: getColumnCount(widget.panel.type),
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                children: List.generate(widget.panel.buttons.length, (index) {
+                  return buildPanelButton(index, buttonIdControllers);
+                }),
+              ),
+            )
           ],
         ),
       ),
@@ -301,24 +262,102 @@ class _PanelWidgetState extends State<PanelWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IdInputField(
-                controller: controllers[index],
-                initialValue: widget.panel.buttons[index].id,
-                onChanged: (value) {
-                  setState(() {
-                    widget.panel.buttons[index].id = value;
-                  });
-                }),
-            CustomDropdown<int>(
-                selectedValue: widget.panel.buttons[index].actionGroupUid,
-                items: allActionGroup.keys.toList(),
-                itemLabel: (item) => allActionGroup[item]!.name,
-                onChanged: (uid) {
-                  setState(() {
-                    widget.panel.buttons[index].actionGroupUid = uid!;
-                  });
-                }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IdInputField(
+                    controller: controllers[index],
+                    initialValue: widget.panel.buttons[index].id,
+                    onChanged: (value) {
+                      setState(() {
+                        widget.panel.buttons[index].id = value;
+                      });
+                    }),
+                Tooltip(
+                  message: '添加动作',
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.add_circle,
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (widget.panel.buttons[index].actionGroupUids.length <
+                            4) {
+                          widget.panel.buttons[index].actionGroupUids
+                              .add(allActionGroup.keys.first);
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            for (int i = 0;
+                i < widget.panel.buttons[index].actionGroupUids.length;
+                i++) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomDropdown<int>(
+                      selectedValue:
+                          widget.panel.buttons[index].actionGroupUids[i],
+                      items: allActionGroup.keys.toList(),
+                      itemLabel: (item) => allActionGroup[item]!.name,
+                      onChanged: (uid) {
+                        setState(() {
+                          widget.panel.buttons[index].actionGroupUids[i] = uid!;
+                        });
+                      }),
+                  DeleteBtnDense(
+                      message: '删除动作',
+                      onDelete: () {
+                        setState(() {
+                          widget.panel.buttons[index].actionGroupUids
+                              .removeAt(i);
+                        });
+                      })
+                ],
+              ),
+            ],
           ],
         ));
+  }
+
+  // 根据面板类型动态计算宽度
+  double calculateWidth(PanelType type,
+      {required double buttonSize,
+      required double spacing,
+      required double padding}) {
+    int columns = getColumnCount(type); // 每行按钮数
+    return buttonSize * columns + spacing * (columns - 1) + padding * 2;
+  }
+
+  // 根据面板类型动态计算高度
+  double calculateHeight(PanelType type,
+      {required double buttonSize,
+      required double spacing,
+      required double padding}) {
+    int rows = getRowCount(type); // 每列按钮数
+    return buttonSize * rows + spacing * (rows - 1) + padding * 2;
+  }
+
+  // 根据面板类型获取列数
+  int getColumnCount(PanelType type) {
+    switch (type) {
+      case PanelType.fourButton:
+        return 2; // 2x2
+      case PanelType.sixButton:
+        return 3; // 3x2
+      case PanelType.eightButton:
+        return 4; // 4x2
+      default:
+        return 1;
+    }
+  }
+
+  // 根据面板类型获取行数
+  int getRowCount(PanelType type) {
+    return 2; // 所有类型都是 2 行
   }
 }

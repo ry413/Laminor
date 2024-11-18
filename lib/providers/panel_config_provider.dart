@@ -8,11 +8,11 @@ part 'panel_config_provider.g.dart';
 @JsonSerializable()
 class PanelButton {
   int id; // 按钮的ID就允许用户随便写, 把这责任给他们
-  int actionGroupUid;
+  List<int> actionGroupUids;
 
   PanelButton({
     required this.id,
-    required this.actionGroupUid,
+    required this.actionGroupUids,
   });
 
   // PanelButton的正反序列化
@@ -72,10 +72,10 @@ class PanelConfigNotifier extends ChangeNotifier {
           type: type,
           name: '未命名 四键面板',
           buttons: [
-            PanelButton(id: 0, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 1, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 2, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 3, actionGroupUid: allActionGroup.keys.first),
+            PanelButton(id: 0, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 1, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 2, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 3, actionGroupUids: [allActionGroup.keys.first]),
           ]
         ));
         break;
@@ -85,12 +85,12 @@ class PanelConfigNotifier extends ChangeNotifier {
           type: type,
           name: '未命名 六键面板',
           buttons: [
-            PanelButton(id: 0, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 1, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 2, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 3, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 4, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 5, actionGroupUid: allActionGroup.keys.first),
+            PanelButton(id: 0, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 1, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 2, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 3, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 4, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 5, actionGroupUids: [allActionGroup.keys.first]),
           ]
         ));
         break;
@@ -100,14 +100,14 @@ class PanelConfigNotifier extends ChangeNotifier {
           type: type,
           name: '未命名 八键面板',
           buttons: [
-            PanelButton(id: 0, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 1, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 2, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 3, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 4, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 5, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 6, actionGroupUid: allActionGroup.keys.first),
-            PanelButton(id: 7, actionGroupUid: allActionGroup.keys.first),
+            PanelButton(id: 0, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 1, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 2, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 3, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 4, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 5, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 6, actionGroupUids: [allActionGroup.keys.first]),
+            PanelButton(id: 7, actionGroupUids: [allActionGroup.keys.first]),
           ]
         ));
         break;

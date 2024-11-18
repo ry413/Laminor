@@ -130,8 +130,7 @@ class _LampWidgetState extends State<LampWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // 灯名字输入框
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 120),
+            IntrinsicWidth(
               child: TextField(
                   decoration: InputDecoration(
                     isDense: true,

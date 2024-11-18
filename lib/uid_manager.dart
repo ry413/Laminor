@@ -29,7 +29,7 @@ class UidManager {
     return _lampUid++;
   }
   void setLampUid(int uid) {
-    _outputUid = uid;
+    _lampUid = uid;
   }
 
   // 空调

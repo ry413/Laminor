@@ -285,6 +285,7 @@ class _BoardOutputUnitState extends State<BoardOutputUnit> {
                   });
                 }),
           ),
+          
           Expanded(
             flex: 3,
             child: Padding(

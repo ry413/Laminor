@@ -115,8 +115,7 @@ class _ActionGroupWidgetState extends State<ActionGroupWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 120),
+        IntrinsicWidth(
           child: TextField(
               decoration: InputDecoration(
                 isDense: true,

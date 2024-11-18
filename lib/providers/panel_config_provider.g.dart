@@ -8,13 +8,15 @@ part of 'panel_config_provider.dart';
 
 PanelButton _$PanelButtonFromJson(Map<String, dynamic> json) => PanelButton(
       id: (json['id'] as num).toInt(),
-      actionGroupUid: (json['actionGroupUid'] as num).toInt(),
+      actionGroupUids: (json['actionGroupUids'] as List<dynamic>)
+          .map((e) => (e as num).toInt())
+          .toList(),
     );
 
 Map<String, dynamic> _$PanelButtonToJson(PanelButton instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'actionGroupUid': instance.actionGroupUid,
+      'actionGroupUids': instance.actionGroupUids,
     };
 
 Panel _$PanelFromJson(Map<String, dynamic> json) => Panel(
