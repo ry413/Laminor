@@ -146,7 +146,7 @@ class _BoardOutputWidgetState extends State<BoardOutputWidget> {
               ),
               const Divider(height: 1, thickness: 1),
 
-              // 0mg
+              // 0mg, 总之就是遍历并构造行
               for (var indexedEntry
                   in widget.board.outputs.entries.toList().asMap().entries) ...[
                 BoardOutputUnit(
@@ -161,7 +161,7 @@ class _BoardOutputWidgetState extends State<BoardOutputWidget> {
                 if (indexedEntry.key < widget.board.outputs.length - 1)
                   const Divider(height: 1, thickness: 1),
               ]
-
+              // 曾经是这么写的, 曾经是List储存
               // for (int i = 0; i < widget.board.outputs.length; i++) ...[
               //   BoardOutputUnit(
               //     index: i,
@@ -277,7 +277,11 @@ class _BoardOutputUnitState extends State<BoardOutputUnit> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (value) {
                   setState(() {
-                    widget.output.channel = int.tryParse(value)!;
+                    if (value.isEmpty) {
+                      widget.output.channel = 127;
+                    } else {
+                      widget.output.channel = int.parse(value);
+                    }
                   });
                 }),
           ),

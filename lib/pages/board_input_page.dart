@@ -84,7 +84,7 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
   @override
   Widget build(BuildContext context) {
     final boardNotifier = context.watch<BoardConfigNotifier>();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -133,7 +133,8 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                                 size: 24,
                               ),
                               onPressed: () {
-                                  boardNotifier.addInputToBoard(context, widget.board.id);
+                                boardNotifier.addInputToBoard(
+                                    context, widget.board.id);
                               },
                             ),
                           ),
@@ -199,9 +200,9 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
   void didUpdateWidget(covariant BoardInputUnit oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 同步 channel 字段
-  if (widget.input.channel != oldWidget.input.channel) {
-    _channelController.text = widget.input.channel.toString();
-  }
+    if (widget.input.channel != oldWidget.input.channel) {
+      _channelController.text = widget.input.channel.toString();
+    }
   }
 
   @override
@@ -232,7 +233,11 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: (value) {
                     setState(() {
-                      widget.input.channel = int.tryParse(value)!;
+                      if (value.isEmpty) {
+                        widget.input.channel = 127;
+                      } else {
+                        widget.input.channel = int.parse(value);
+                      }
                     });
                   }),
             ),
@@ -262,7 +267,9 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                 child: Row(
                   children: [
                     CustomDropdown<ActionGroup>(
-                        selectedValue: allActionGroup[widget.input.actionGroupUid] ?? allActionGroup.values.first,
+                        selectedValue:
+                            allActionGroup[widget.input.actionGroupUid] ??
+                                allActionGroup.values.first,
                         items: allActionGroup.values.toList(),
                         itemLabel: (actionGroup) => actionGroup.name,
                         onChanged: (actionGroup) {

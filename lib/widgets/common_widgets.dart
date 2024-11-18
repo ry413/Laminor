@@ -94,7 +94,7 @@ class ConfigRowDropdown<T> extends StatelessWidget {
 
 class BoardOutputDropdown extends StatefulWidget {
   final String label;
-  final int selectedValue;    // 这是UID, 而不是索引什么的
+  final int selectedValue; // 这是UID, 而不是索引什么的
   final void Function(int) onChanged;
 
   BoardOutputDropdown(
@@ -116,7 +116,8 @@ class _BoardOutputDropdownState extends State<BoardOutputDropdown> {
       children: [
         Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
         CustomDropdown<BoardOutput>(
-            selectedValue: allOutput[widget.selectedValue] ?? allOutput.values.first,
+            selectedValue:
+                allOutput[widget.selectedValue] ?? allOutput.values.first,
             items: allOutput.values.toList(),
             itemLabel: (output) =>
                 '${output.name} (板 ${output.hostBoardId} 输出通道 ${output.channel})',
@@ -131,11 +132,10 @@ class IdInputField extends StatefulWidget {
   final int initialValue;
   final Function(int) onChanged;
 
-  IdInputField({
-    required this.controller,
-    required this.initialValue,
-    required this.onChanged
-  });
+  IdInputField(
+      {required this.controller,
+      required this.initialValue,
+      required this.onChanged});
 
   @override
   State<IdInputField> createState() => _IDInputFieldState();
@@ -153,26 +153,31 @@ class _IDInputFieldState extends State<IdInputField> {
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 50),
-            child: TextField(
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4.0),
-                    borderSide: BorderSide(width: 1, color: Colors.brown),
+              constraints: BoxConstraints(maxWidth: 50),
+              child: TextField(
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4.0),
+                      borderSide: BorderSide(width: 1, color: Colors.brown),
+                    ),
                   ),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                controller: widget.controller,
-                onChanged: (value) => widget.onChanged(int.tryParse(value)!)),
-          ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  controller: widget.controller,
+                  onChanged: (value) {
+                    if (value.isEmpty) {
+                      widget.onChanged(0);
+                    } else {
+                      widget.onChanged(int.parse(value));
+                    }
+                  })),
         ),
       ],
     );
-  }  
+  }
 }
 
 // 单个输入框组件
@@ -238,7 +243,6 @@ class _InputFieldState extends State<InputField> {
   }
 }
 
-
 class CustomDropdown<T> extends StatefulWidget {
   final T selectedValue;
   final List<T> items;
@@ -294,14 +298,18 @@ class CustomDropdownState<T> extends State<CustomDropdown<T>> {
               padding: EdgeInsets.only(left: 4, top: 1, bottom: 1),
               decoration: BoxDecoration(
                 color: _isHovered || controller.isOpen ? Colors.white : null,
-                border: _isHovered || controller.isOpen ? Border.all(width: 0.2, color: Colors.grey) : null,
+                border: _isHovered || controller.isOpen
+                    ? Border.all(width: 0.2, color: Colors.grey)
+                    : null,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible(child: Text(widget.itemLabel(widget.selectedValue), overflow: TextOverflow.ellipsis, maxLines: 1)),
+                  Flexible(
+                      child: Text(widget.itemLabel(widget.selectedValue),
+                          overflow: TextOverflow.ellipsis, maxLines: 1)),
                   Icon(Icons.arrow_drop_down),
                 ],
               ),

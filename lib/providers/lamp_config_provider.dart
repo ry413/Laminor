@@ -8,15 +8,24 @@ import 'package:provider/provider.dart';
 
 part 'lamp_config_provider.g.dart';
 
-enum LampType { switchLight, dimmableLight }
+enum LampType { normalLight, dimmableLight }
 
 extension LampTypeExtension on LampType {
   String get displayName {
     switch (this) {
-      case LampType.switchLight:
+      case LampType.normalLight:
         return '普通灯';
       case LampType.dimmableLight:
         return '调光灯';
+    }
+  }
+
+  List<String> get operations {
+    switch (this) {
+      case LampType.normalLight:
+        return ['开', '关'];
+      case LampType.dimmableLight:
+        return ['开', '关', '调光'];
     }
   }
 }
@@ -37,9 +46,6 @@ class Lamp {
     required this.channelPowerUid,
   });
 
-  List<String> get operations {
-    return ['开', '关'];
-  }
 
   // Lamp的正反序列化
   factory Lamp.fromJson(Map<String, dynamic> json) => _$LampFromJson(json);
@@ -51,34 +57,40 @@ class Lamp {
 }
 
 class LampNotifier extends ChangeNotifier {
-  List<Lamp> _allLamps = [];
-  List<Lamp> get allLamp => _allLamps;
+  Map<int, Lamp> _allLamps = {};
+  Map<int, Lamp> get allLamps => _allLamps;
 
   void addLamp(BuildContext context) {
     final allOutputs =
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
-
     if (allOutputs.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('请先配置输出')));
       return;
     }
 
-    _allLamps.add(Lamp(
+    final lamp = Lamp(
       uid: UidManager().generateLampUid(),
       name: '未命名 灯',
-      type: LampType.switchLight,
+      type: LampType.normalLight,
       channelPowerUid: allOutputs.keys.first,
-    ));
+    );
+
+    _allLamps[lamp.uid] = lamp;
     notifyListeners();
   }
 
-  void removeAt(int index) {
-    _allLamps.removeAt(index);
+  void removeLamp(int key) {
+    _allLamps.remove(key);
     notifyListeners();
   }
 
   void updateWidget() {
+    notifyListeners();
+  }
+
+  void updateLampMap(Map<int, Lamp> newLamps) {
+    _allLamps = newLamps;
     notifyListeners();
   }
 
@@ -88,7 +100,9 @@ class LampNotifier extends ChangeNotifier {
 
     UidManager().setLampUid(newLampUidMax + 1);
 
-    _allLamps.addAll(newLamps);
+    for (var lamp in newLamps) {
+      _allLamps[lamp.uid] = lamp;
+    }
     notifyListeners();
   }
 }

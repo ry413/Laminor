@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
+import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:flutter_web_1/widgets/common_widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -50,7 +51,7 @@ class ActionConfigPageState extends State<ActionConfigPage> {
                   values.insert(newIndex, value);
 
                   actionConfigNotifier
-                      .updateActionGroups(Map.fromIterables(keys, values));
+                      .updateActionGroupsMap(Map.fromIterables(keys, values));
                 },
                 itemCount: actionConfigNotifier.allActionGroup.length,
                 itemBuilder: (context, index) {
@@ -58,6 +59,7 @@ class ActionConfigPageState extends State<ActionConfigPage> {
                       .toList()[index];
                   final key =
                       actionConfigNotifier.allActionGroup.keys.toList()[index];
+
                   return ActionGroupWidget(
                     key: ValueKey(key), // 设置唯一的 key
                     actionGroup: actionGroup,
@@ -243,7 +245,7 @@ class _ActionWidgetState extends State<ActionWidget> {
   void initState() {
     super.initState();
     _delayTimeController =
-        TextEditingController(text: widget.action.delayTime.toString());
+        TextEditingController(text: widget.action.parameter.toString());
   }
 
   @override
@@ -255,9 +257,8 @@ class _ActionWidgetState extends State<ActionWidget> {
   @override
   void didUpdateWidget(covariant ActionWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 同步 _delayTimeController 的内容
-    if (widget.action.delayTime != oldWidget.action.delayTime) {
-      _delayTimeController.text = widget.action.delayTime?.toString() ??
+    if (widget.action.parameter != oldWidget.action.parameter) {
+      _delayTimeController.text = widget.action.parameter?.toString() ??
           ''; // 如果 delayTime 为 null，设置为空字符串
     }
   }
@@ -310,93 +311,89 @@ class _ActionWidgetState extends State<ActionWidget> {
   Widget _buildActionContent(int index) {
     List<Widget> widgets;
 
-    final allLamp = context.watch<LampNotifier>().allLamp;
-    final allACConfig = context.watch<AirConNotifier>().allAirCons;
+    final allLamps = context.watch<LampNotifier>().allLamps;
+    final allAirCons = context.watch<AirConNotifier>().allAirCons;
+    final allRS485Commands = context.watch<RS485ConfigNotifier>().allCommands;
     final allActionGroup = context.watch<ActionConfigNotifier>().allActionGroup;
 
+    // 灯
     if (widget.action.type == ActionType.lamp) {
-      if (!allLamp.contains(widget.action.lamp)) {
-        widget.action.lamp = allLamp[0];
+      repairUID(allLamps);
+      final lampType = allLamps[widget.action.targetUID]!.type;
+
+      // 没法在widgets里写这逻辑, 只能在这里初始化
+      if (widget.action.operation == '调光' &&
+          widget.action.parameter == null) {
+        widget.action.parameter = 1;
       }
 
       widgets = [
         SectionTitle(title: '对'),
-        // 目标灯
-        CustomDropdown<Lamp>(
-            selectedValue: widget.action.lamp!,
-            items: allLamp,
-            itemLabel: (lamp) => lamp.name,
-            onChanged: (lamp) {
-              setState(() {
-                widget.action.lamp = lamp!;
-              });
-            }),
+        buildTargetDropdown(allLamps),
         SectionTitle(title: '执行'),
-        // 操作
-        CustomDropdown<String>(
-          selectedValue: widget.action.operation,
-          items: widget.action.lamp!.operations,
-          itemLabel: (operation) => operation,
-          onChanged: (oparation) {
-            setState(() {
-              widget.action.operation = oparation!;
-            });
-          },
-        )
+
+        // 普通灯
+        if (lampType == LampType.normalLight) ...[
+          buildOperationDropdown(LampType.normalLight.operations)
+        ]
+        // 调光灯
+        else if (lampType == LampType.dimmableLight) ...[
+          buildOperationDropdown(LampType.dimmableLight.operations),
+          if (widget.action.operation == '调光') ...[
+            SectionTitle(title: '至'),
+            CustomDropdown<int>(
+                selectedValue: widget.action.parameter as int,
+                items: List.generate(10, (i) => i + 1),
+                itemLabel: (value) => '${value}0%',
+                onChanged: (value) {
+                  setState(() {
+                    widget.action.parameter = value;
+                  });
+                })
+          ]
+        ]
       ];
     }
-    // 操作空调
+    // 空调
     else if (widget.action.type == ActionType.airCon) {
-      if (!allACConfig.contains(widget.action.airCon)) {
-        widget.action.airCon = allACConfig[0];
-      }
+      repairUID(allAirCons);
 
       widgets = [
         SectionTitle(title: '对'),
-        // 目标空调
-        CustomDropdown<AirCon>(
-            selectedValue: widget.action.airCon!,
-            items: allACConfig,
-            itemLabel: (airCon) => airCon.name,
-            onChanged: (airCon) {
-              setState(() {
-                widget.action.airCon = airCon!;
-              });
-            }),
+        buildTargetDropdown(allAirCons),
         SectionTitle(title: '执行'),
-        // 操作
-        CustomDropdown<String>(
-          selectedValue: widget.action.operation,
-          items: widget.action.airCon!.operations,
-          itemLabel: (operation) => operation,
-          onChanged: (oparation) {
-            setState(() {
-              widget.action.operation = oparation!;
-            });
-          },
-        )
+        buildOperationDropdown(AirCon.operations),
       ];
-    } else if (widget.action.type == ActionType.actionGroup) {
-      widget.action.actionGroupUid ??= allActionGroup.values.first.uid;
+    }
+    // 485
+    else if (widget.action.type == ActionType.rs485) {
+      repairUID(allRS485Commands);
+      widget.action.operation = '发送'; // 485就一种操作
       widgets = [
-        // 调用动作组
-        CustomDropdown<int>(
-            selectedValue: widget.action.actionGroupUid!,
-            items: allActionGroup.keys.toList(),
-            itemLabel: (uid) => allActionGroup[uid]!.name,
-            onChanged: (uid) {
-              setState(() {
-                widget.action.actionGroupUid = uid;
-              });
-            }),
+        SectionTitle(title: '发送'),
+        buildTargetDropdown(allRS485Commands),
+      ];
+    }
+    // 动作组
+    else if (widget.action.type == ActionType.actionGroup) {
+      repairUID(allActionGroup);
+
+      widgets = [
+        SectionTitle(title: '对'),
+        buildTargetDropdown(allActionGroup),
+        SectionTitle(title: '执行'),
+        buildOperationDropdown(ActionGroup.operations),
       ];
     }
     // 延时
     else if (widget.action.type == ActionType.delay) {
-      if (widget.action.delayTime == null) {
-        widget.action.delayTime ??= 0;
-        _delayTimeController.text = widget.action.delayTime.toString();
+      if (widget.action.parameter == null) {
+        widget.action.parameter = 0;
+        _delayTimeController.text = widget.action.parameter.toString();
+      } else if (widget.action.parameter is! int) {
+        throw Exception('delay parameter 应该是 int 类型');
       }
+      widget.action.operation = '延时';
 
       widgets = [
         ConstrainedBox(
@@ -415,7 +412,7 @@ class _ActionWidgetState extends State<ActionWidget> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
                 setState(() {
-                  widget.action.delayTime = int.tryParse(value);
+                  widget.action.parameter = int.tryParse(value);
                 });
               }),
         ),
@@ -425,6 +422,7 @@ class _ActionWidgetState extends State<ActionWidget> {
       ];
     } else {
       widgets = [];
+      print("不可能的");
     }
 
     widgets.addAll([
@@ -453,13 +451,53 @@ class _ActionWidgetState extends State<ActionWidget> {
       ),
     );
   }
+
+  /// 保证targetUID指向绝对可用的对象
+  void repairUID(Map<int, dynamic> deviceMap) {
+    if (!deviceMap.containsKey(widget.action.targetUID) ||
+        deviceMap[widget.action.targetUID] == null) {
+      widget.action.targetUID = deviceMap.keys.first;
+      print(
+          '${widget.action.type}: widget.action.targetUID不存在, 修改为${widget.action.targetUID}');
+    }
+  }
+
+  CustomDropdown<int> buildTargetDropdown(Map<int, dynamic> deviceMap) {
+    return CustomDropdown<int>(
+        selectedValue: widget.action.targetUID!,
+        items: deviceMap.keys.toList(),
+        itemLabel: (uid) => deviceMap[uid]!.name,
+        onChanged: (uid) {
+          setState(() {
+            widget.action.targetUID = uid!;
+          });
+        });
+  }
+
+  CustomDropdown<String> buildOperationDropdown(List<String> operations) {
+    if (!operations.contains(widget.action.operation)) {
+      widget.action.operation = operations.first;
+    }
+    return CustomDropdown<String>(
+      selectedValue: widget.action.operation,
+      items: operations,
+      itemLabel: (operation) => operation,
+      onChanged: (oparation) {
+        setState(() {
+          widget.action.operation = oparation!;
+        });
+      },
+    );
+  }
 }
 
 // 返回可用的操作类型
 List<ActionType> getAvailableActionTypes(BuildContext context) {
-  final allLamp = Provider.of<LampNotifier>(context, listen: false).allLamp;
+  final allLamp = Provider.of<LampNotifier>(context, listen: false).allLamps;
   final allAirCon =
       Provider.of<AirConNotifier>(context, listen: false).allAirCons;
+  final allRS485Command =
+      Provider.of<RS485ConfigNotifier>(context, listen: false).allCommands;
   final allActionGroup =
       Provider.of<ActionConfigNotifier>(context, listen: false).allActionGroup;
 
@@ -471,6 +509,10 @@ List<ActionType> getAvailableActionTypes(BuildContext context) {
 
   if (allAirCon.isNotEmpty) {
     availableTypes.add(ActionType.airCon);
+  }
+
+  if (allRS485Command.isNotEmpty) {
+    availableTypes.add(ActionType.rs485);
   }
 
   // 但是, 这个部件不就是动作组吗, 动作组难道会被删光?

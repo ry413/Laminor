@@ -49,7 +49,7 @@ class RS485ConfigPageState extends State<RS485ConfigPage> {
                     keys.insert(newIndex, key);
                     values.insert(newIndex, value);
                     
-                    rs485ConfigNotifier.updateWidget();
+                    rs485ConfigNotifier.updateRS485Map(Map.fromIterables(keys, values));
                   },
                   itemCount: rs485ConfigNotifier.allCommands.length,
                   itemBuilder: (context, index) {

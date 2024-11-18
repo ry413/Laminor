@@ -1,7 +1,5 @@
 import 'dart:math';
-
-import 'package:flutter/cupertino.dart' hide Action;
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Action;
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';

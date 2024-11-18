@@ -101,6 +101,7 @@ extension ACAutoVentSpeedExtension on ACAutoVentSpeed {
 @JsonSerializable()
 class AirCon {
   int id;
+  int uid; // 显然, 易证
   String name;
 
   @JsonKey(fromJson: _acTypeFromJson, toJson: _acTypeToJson)
@@ -111,10 +112,10 @@ class AirCon {
   int channelHighUid;
   int channelWater1Uid;
   int channelWater2Uid;
-  int temperatureID;
 
   AirCon({
     required this.id,
+    required this.uid,
     required this.name,
     required this.type,
     required this.channelPowerUid,
@@ -123,16 +124,14 @@ class AirCon {
     required this.channelHighUid,
     required this.channelWater1Uid,
     required this.channelWater2Uid,
-    required this.temperatureID,
   });
 
-  List<String> get operations {
+  static List<String> get operations {
     return ["开", "关"];
   }
 
   // AirCon的正反序列化
-  factory AirCon.fromJson(Map<String, dynamic> json) =>
-      _$AirConFromJson(json);
+  factory AirCon.fromJson(Map<String, dynamic> json) => _$AirConFromJson(json);
   Map<String, dynamic> toJson() => _$AirConToJson(this);
 
   // ACType的正反序列化
@@ -214,9 +213,9 @@ class AirConNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<AirCon> _allAirCons = [];
+  Map<int, AirCon> _allAirCons = {};
 
-  List<AirCon> get allAirCons => _allAirCons;
+  Map<int, AirCon> get allAirCons => _allAirCons;
 
   // 添加一个新空调
   void addAirCon(BuildContext context) {
@@ -227,8 +226,10 @@ class AirConNotifier extends ChangeNotifier {
           .showSnackBar(SnackBar(content: Text('请先配置输出')));
       return;
     }
-    _allAirCons.add(AirCon(
+
+    final airCon = AirCon(
       id: allAirCons.length,
+      uid: UidManager().generateAirConUid(),
       name: '未命名 空调',
       type: ACType.single,
       channelPowerUid: allOutputs.keys.first,
@@ -237,13 +238,14 @@ class AirConNotifier extends ChangeNotifier {
       channelHighUid: allOutputs.keys.first,
       channelWater1Uid: allOutputs.keys.first,
       channelWater2Uid: allOutputs.keys.first,
-      temperatureID: 1,
-    ));
+    );
+
+    _allAirCons[airCon.uid] = airCon;
     notifyListeners();
   }
 
-  void removeAt(int index) {
-    _allAirCons.removeAt(index);
+  void removeAirCon(int key) {
+    _allAirCons.remove(key);
     notifyListeners();
   }
 
@@ -278,12 +280,14 @@ class AirConNotifier extends ChangeNotifier {
 
   void deserializationUpdate(List<AirCon> newAirCons) {
     _allAirCons.clear();
-
-    int newAirConUidMax = newAirCons.fold(0, (prev, airCon) => max(prev, airCon.id));
+    int newAirConUidMax =
+        newAirCons.fold(0, (prev, airCon) => max(prev, airCon.uid));
 
     UidManager().setAirConUid(newAirConUidMax + 1);
 
-    _allAirCons.addAll(newAirCons);
+    for (var airCon in newAirCons) {
+      _allAirCons[airCon.uid] = airCon;
+    }
     notifyListeners();
   }
 }

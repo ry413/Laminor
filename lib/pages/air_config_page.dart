@@ -40,8 +40,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
                       itemLabel: (temp) => temp.toString(),
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.defaultTargetTemp = value;
+                        }
                       }),
                   ConfigRowDropdown<ACMode>(
                       label: '默认模式',
@@ -57,8 +58,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: ACFanSpeed.values,
                       itemLabel: (fandSpeed) => fandSpeed.displayName,
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.defaultFanSpeed = value;
+                        }
                       }),
                   ConfigRowDropdown<int>(
                       label: '超出目标温度后停止工作的阈值',
@@ -66,8 +68,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: [1, 2, 3, 4, 5],
                       itemLabel: (value) => value.toString(),
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.stopThreshold = value;
+                        }
                       }),
                   ConfigRowDropdown<int>(
                       label: '回温后重新开始工作的阈值',
@@ -75,8 +78,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: [1, 2, 3, 4, 5],
                       itemLabel: (value) => value.toString(),
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.reworkThreshold = value;
+                        }
                       }),
                   ConfigRowDropdown<ACStopAction>(
                       label: '盘管空调达到停止工作的阈值后',
@@ -95,8 +99,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: [1, 2, 3, 4, 5],
                       itemLabel: (diff) => diff.toString(),
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.lowFanTempDiff = value;
+                        }
                       }),
                   ConfigRowDropdown<int>(
                       label: '高风 所需温差大于等于',
@@ -104,8 +109,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: [3, 4, 5, 6, 7],
                       itemLabel: (diff) => diff.toString(),
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.highFanTempDiff = value;
+                        }
                       }),
                   ConfigRowDropdown<ACAutoVentSpeed>(
                       label: '风速[自动]且工作模式为[通风]时',
@@ -113,8 +119,9 @@ class ACConfigPageState extends State<ACConfigPage> {
                       items: ACAutoVentSpeed.values,
                       itemLabel: (speed) => speed.displayName,
                       onChanged: (value) {
-                        if (value != null)
+                        if (value != null) {
                           acConfigNotifier.autoVentSpeed = value;
+                        }
                       }),
                 ]),
                 ListView.builder(
@@ -122,10 +129,11 @@ class ACConfigPageState extends State<ACConfigPage> {
                   shrinkWrap: true,
                   itemCount: acConfigNotifier.allAirCons.length,
                   itemBuilder: (context, index) {
+                    final entry = acConfigNotifier.allAirCons.entries.toList()[index];
                     return AirConWidget(
-                      airCon: acConfigNotifier.allAirCons[index],
+                      airCon: entry.value,
                       onDelete: () {
-                        acConfigNotifier.removeAt(index);
+                        acConfigNotifier.removeAirCon(entry.key);
                       },
                     );
                   },
@@ -336,14 +344,6 @@ class _AirConWidgetState extends State<AirConWidget> {
                         });
                       },
                     ),
-                  InputField(
-                      label: '温控器ID',
-                      value: widget.airCon.temperatureID,
-                      onChanged: (value) {
-                        setState(() {
-                          widget.airCon.temperatureID = value;
-                        });
-                      })
                 ],
               ),
             ] else ...[

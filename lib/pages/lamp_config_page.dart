@@ -39,20 +39,31 @@ class LampConfigPageState extends State<LampConfigPage> {
                   onReorder: (oldIndex, newIndex) {
                     if (newIndex > oldIndex) newIndex -= 1;
 
-                    final item = lampConfigNotifier.allLamp.removeAt(oldIndex);
-                    lampConfigNotifier.allLamp.insert(newIndex, item);
-                    lampConfigNotifier.updateWidget();
+                    final keys = lampConfigNotifier.allLamps.keys.toList();
+                    final values = lampConfigNotifier.allLamps.values.toList();
+
+                    final key = keys.removeAt(oldIndex);
+                    final value = values.removeAt(oldIndex);
+
+                    keys.insert(newIndex, key);
+                    values.insert(newIndex, value);
+
+                    lampConfigNotifier.updateLampMap(Map.fromIterables(keys, values));
                   },
-                  itemCount: lampConfigNotifier.allLamp.length,
+                  itemCount: lampConfigNotifier.allLamps.length,
                   itemBuilder: (context, index) {
-                    final lamp = lampConfigNotifier.allLamp[index];
+                    final lamp =
+                        lampConfigNotifier.allLamps.values.toList()[index];
+                    final key =
+                        lampConfigNotifier.allLamps.keys.toList()[index];
+
                     return LampWidget(
-                      key: ValueKey(lamp),
-                      index: index,
+                      key: ValueKey(key),
                       lamp: lamp,
                       onDelete: () {
-                        lampConfigNotifier.removeAt(index);
+                        lampConfigNotifier.removeLamp(key);
                       },
+                      index: index,
                     );
                   },
                 ),

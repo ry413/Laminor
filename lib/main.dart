@@ -154,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         showLampList = !showLampList;
       }),
       if (showLampList)
-        ...lampNotifier.allLamp.asMap().entries.map((entry) {
+        ...lampNotifier.allLamps.entries.map((entry) {
           return InkWell(
             child: Padding(
               padding: EdgeInsets.only(left: 60.0),
@@ -177,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }),
       // 空调列表
       if (showACList)
-        ...airConNotifier.allAirCons.asMap().entries.map((entry) {
+        ...airConNotifier.allAirCons.entries.map((entry) {
           return InkWell(
             child: Padding(
               padding: EdgeInsets.only(left: 60.0),
@@ -423,6 +423,8 @@ class _MyHomePageState extends State<MyHomePage> {
         Provider.of<LampNotifier>(context, listen: false);
     final acConfigNotifier =
         Provider.of<AirConNotifier>(context, listen: false);
+    final rs485CommandNotifier =
+        Provider.of<RS485ConfigNotifier>(context, listen: false);
     final actionGroupNotifier =
         Provider.of<ActionConfigNotifier>(context, listen: false);
     final panelConfigNotifier =
@@ -431,10 +433,15 @@ class _MyHomePageState extends State<MyHomePage> {
     Map<String, dynamic> fullConfig = {
       '板子列表':
           boardConfigNotifier.allBoard.map((board) => board.toJson()).toList(),
-      '灯列表': lampConfigNotifier.allLamp.map((lamp) => lamp.toJson()).toList(),
+      '灯列表': lampConfigNotifier.allLamps.values
+          .map((lamp) => lamp.toJson())
+          .toList(),
       '空调通用配置': acConfigNotifier.toJson(),
-      '空调列表': acConfigNotifier.allAirCons
+      '空调列表': acConfigNotifier.allAirCons.values
           .map((acConfig) => acConfig.toJson())
+          .toList(),
+      '485指令码列表': rs485CommandNotifier.allCommands.values
+          .map((command) => command.toJson())
           .toList(),
       '动作组列表': actionGroupNotifier.allActionGroup.values
           .map((actionGroup) => actionGroup.toJson())
@@ -521,6 +528,7 @@ class _MyHomePageState extends State<MyHomePage> {
           final Map<String, dynamic> jsonData = jsonDecode(jsonString);
 
           final boardConfigNotifier =
+              // ignore: use_build_context_synchronously
               Provider.of<BoardConfigNotifier>(context, listen: false);
           final newBoards = (jsonData['板子列表'] as List)
               .map((item) => BoardConfig.fromJson(item))
@@ -528,6 +536,7 @@ class _MyHomePageState extends State<MyHomePage> {
           boardConfigNotifier.deserializationUpdate(newBoards);
 
           final lampConfigNotifier =
+              // ignore: use_build_context_synchronously
               Provider.of<LampNotifier>(context, listen: false);
           final newLamps = (jsonData['灯列表'] as List)
               .map((item) => Lamp.fromJson(item))
@@ -535,6 +544,7 @@ class _MyHomePageState extends State<MyHomePage> {
           lampConfigNotifier.deserializationUpdate(newLamps);
 
           final acConfigNotifier =
+              // ignore: use_build_context_synchronously
               Provider.of<AirConNotifier>(context, listen: false);
           acConfigNotifier.fromJson(jsonData['空调通用配置']);
           final newAirCons = (jsonData['空调列表'] as List)
@@ -543,13 +553,15 @@ class _MyHomePageState extends State<MyHomePage> {
           acConfigNotifier.deserializationUpdate(newAirCons);
 
           final actionGroupNotifier =
+              // ignore: use_build_context_synchronously
               Provider.of<ActionConfigNotifier>(context, listen: false);
           final newActionGroups = (jsonData['动作组列表'] as List)
-              .map((item) => ActionGroup.fromJson(item, context))
+              .map((item) => ActionGroup.fromJson(item))
               .toList();
           actionGroupNotifier.deserializationUpdate(newActionGroups);
 
           final panelConfigNotifier =
+              // ignore: use_build_context_synchronously
               Provider.of<PanelConfigNotifier>(context, listen: false);
           final newPanels = (jsonData['面板列表'] as List)
               .map((item) => Panel.fromJson(item))
