@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Action;
 import 'package:flutter/services.dart';
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
+import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:flutter_web_1/widgets/common_widgets.dart';
@@ -18,6 +19,8 @@ class ActionConfigPage extends StatefulWidget {
 }
 
 class ActionConfigPageState extends State<ActionConfigPage> {
+  ScrollController _scrollController = ScrollController();
+
   @override
   Widget build(BuildContext context) {
     final actionConfigNotifier = context.watch<ActionConfigNotifier>();
@@ -34,6 +37,7 @@ class ActionConfigPageState extends State<ActionConfigPage> {
           children: [
             Expanded(
               child: ReorderableListView.builder(
+                scrollController: _scrollController,
                 shrinkWrap: true,
                 buildDefaultDragHandles: false,
                 onReorder: (oldIndex, newIndex) {
@@ -71,6 +75,7 @@ class ActionConfigPageState extends State<ActionConfigPage> {
                 },
               ),
             ),
+            SizedBox(height: 80)
           ],
         ),
       ),
@@ -79,6 +84,11 @@ class ActionConfigPageState extends State<ActionConfigPage> {
           onPressed: () {
             actionConfigNotifier.addOrUpdateActionGroup(
                 Action(type: getAvailableActionTypes(context).first));
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollController.jumpTo(
+                _scrollController.position.maxScrollExtent,
+              );
+            });
           }),
     );
   }
@@ -115,23 +125,6 @@ class _ActionGroupWidgetState extends State<ActionGroupWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IntrinsicWidth(
-          child: TextField(
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4.0),
-                  borderSide: BorderSide(width: 1, color: Colors.brown),
-                ),
-              ),
-              controller: controller,
-              onChanged: (value) {
-                widget.actionGroup.name = value;
-                actionConfigNotifier.updateWidget();
-              }),
-        ),
         Container(
           margin: const EdgeInsets.symmetric(vertical: 8.0),
           padding: const EdgeInsets.symmetric(
@@ -147,33 +140,59 @@ class _ActionGroupWidgetState extends State<ActionGroupWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(width: 25),
-                  SectionTitle(title: '操作类型'),
-                  SizedBox(width: 25),
-                  SectionTitle(title: '目标'),
+                  Text(
+                    widget.index.toString(),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge!
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 20),
+                  IntrinsicWidth(
+                    child: TextField(
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                            borderSide:
+                                BorderSide(width: 1, color: Colors.brown),
+                          ),
+                        ),
+                        controller: controller,
+                        onChanged: (value) {
+                          widget.actionGroup.name = value;
+                          actionConfigNotifier.updateWidget();
+                        }),
+                  ),
                   Spacer(),
-                  Tooltip(
-                    message: '添加动作',
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.add_circle,
-                        size: 24,
+                  ExcludeFocus(
+                    child: Tooltip(
+                      message: '添加动作',
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.add_circle,
+                          size: 24,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            widget.actionGroup.actions.add(Action(
+                                type: getAvailableActionTypes(context).first));
+                          });
+                        },
                       ),
-                      onPressed: () {
-                        setState(() {
-                          widget.actionGroup.actions.add(Action(
-                              type: getAvailableActionTypes(context).first));
-                        });
-                      },
                     ),
                   ),
-                  Tooltip(
-                    message: '删除动作组',
-                    child: IconButton(
-                      onPressed: () => widget.onDelete(),
-                      icon: Icon(
-                        Icons.delete_forever,
-                        size: 24, // 图标大小
+                  ExcludeFocus(
+                    child: Tooltip(
+                      message: '删除动作组',
+                      child: IconButton(
+                        onPressed: () => widget.onDelete(),
+                        icon: Icon(
+                          Icons.delete_forever,
+                          size: 24, // 图标大小
+                        ),
                       ),
                     ),
                   ),
@@ -314,6 +333,7 @@ class _ActionWidgetState extends State<ActionWidget> {
     final allAirCons = context.watch<AirConNotifier>().allAirCons;
     final allRS485Commands = context.watch<RS485ConfigNotifier>().allCommands;
     final allActionGroup = context.watch<ActionConfigNotifier>().allActionGroup;
+    final allOutputs = context.watch<BoardConfigNotifier>().allOutputs;
 
     // 灯
     if (widget.action.type == ActionType.lamp) {
@@ -321,8 +341,7 @@ class _ActionWidgetState extends State<ActionWidget> {
       final lampType = allLamps[widget.action.targetUID]!.type;
 
       // 没法在widgets里写这逻辑, 只能在这里初始化
-      if (widget.action.operation == '调光' &&
-          widget.action.parameter == null) {
+      if (widget.action.operation == '调光' && widget.action.parameter == null) {
         widget.action.parameter = 1;
       }
 
@@ -367,10 +386,22 @@ class _ActionWidgetState extends State<ActionWidget> {
     // 485
     else if (widget.action.type == ActionType.rs485) {
       repairUID(allRS485Commands);
-      widget.action.operation = '发送'; // 485就一种操作
+
       widgets = [
         SectionTitle(title: '发送'),
         buildTargetDropdown(allRS485Commands),
+      ];
+      widget.action.operation = '发送'; // 485就一种操作
+    }
+    // 继电器
+    else if (widget.action.type == ActionType.relay) {
+      repairUID(allOutputs);
+
+      widgets = [
+        SectionTitle(title: '对'),
+        buildTargetDropdown(allOutputs),
+        SectionTitle(title: '执行'),
+        buildOperationDropdown(['开', '关']),
       ];
     }
     // 动作组
@@ -426,16 +457,7 @@ class _ActionWidgetState extends State<ActionWidget> {
 
     widgets.addAll([
       Spacer(),
-      Tooltip(
-        message: '删除',
-        child: InkWell(
-          onTap: () => widget.onDelete(),
-          child: Icon(
-            Icons.delete_forever,
-            size: 20, // 图标大小
-          ),
-        ),
-      ),
+      DeleteBtnDense(message: '删除动作', onDelete: () => widget.onDelete()),
       SizedBox(width: 20),
       ReorderableDragStartListener(
         index: index,
@@ -497,6 +519,8 @@ List<ActionType> getAvailableActionTypes(BuildContext context) {
       Provider.of<AirConNotifier>(context, listen: false).allAirCons;
   final allRS485Command =
       Provider.of<RS485ConfigNotifier>(context, listen: false).allCommands;
+  final allOutputs =
+      Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
   final allActionGroup =
       Provider.of<ActionConfigNotifier>(context, listen: false).allActionGroup;
 
@@ -512,6 +536,10 @@ List<ActionType> getAvailableActionTypes(BuildContext context) {
 
   if (allRS485Command.isNotEmpty) {
     availableTypes.add(ActionType.rs485);
+  }
+
+  if (allOutputs.isNotEmpty) {
+    availableTypes.add(ActionType.relay);
   }
 
   // 但是, 这个部件不就是动作组吗, 动作组难道会被删光?

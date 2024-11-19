@@ -120,7 +120,7 @@ class _BoardOutputDropdownState extends State<BoardOutputDropdown> {
                 allOutput[widget.selectedValue] ?? allOutput.values.first,
             items: allOutput.values.toList(),
             itemLabel: (output) =>
-                '${output.name} (板 ${output.hostBoardId} 输出通道 ${output.channel})',
+                '${output.name} (板 ${output.hostBoardId} 输出 ${output.channel})',
             onChanged: (output) => widget.onChanged(output!.uid)),
       ],
     );
@@ -381,6 +381,7 @@ class DeleteBtnDense extends StatelessWidget {
     return Tooltip(
       message: message,
       child: InkWell(
+        canRequestFocus: false,
         onTap: () => onDelete(),
         child: Icon(
           Icons.delete_forever,

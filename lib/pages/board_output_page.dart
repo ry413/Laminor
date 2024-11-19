@@ -38,7 +38,8 @@ class BoardOutputPageState extends State<BoardOutputPage> {
                 boardNotifier.removeAt(index);
               },
             ),
-          )
+          ),
+          SizedBox(height: 80)
         ]),
       ),
       floatingActionButton: FloatButton(

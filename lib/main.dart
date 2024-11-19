@@ -105,6 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Widget> navigationItems = [
       // 主页
       InkWell(
+        canRequestFocus: false,
         onTap: () {
           setState(() {
             _selectedIndex = indexHomePage;
@@ -131,150 +132,47 @@ class _MyHomePageState extends State<MyHomePage> {
           showBoardOutputList, () {
         showBoardOutputList = !showBoardOutputList;
       }),
-      if (showBoardOutputList)
-        ...boardNotifier.allBoard.asMap().entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text('板子 ${entry.value.id}'),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexBoardOutputPage;
-              });
-            },
-          );
-        }),
+      ...buildItemList(showBoardOutputList, boardNotifier.allOutputs, indexBoardOutputPage),
+
       Divider(height: 3),
+
       sideBarItem(indexLampPage, '灯配置', Icons.light, showLampList, () {
         showLampList = !showLampList;
       }),
-      if (showLampList)
-        ...lampNotifier.allLamps.entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text(entry.value.name),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexLampPage;
-              });
-            },
-          );
-        }),
+      ...buildItemList(showLampList, lampNotifier.allLamps, indexLampPage),
+      
       sideBarItem(indexAirConPage, "空调配置", Icons.ac_unit_rounded, showACList,
           () {
         showACList = !showACList;
       }),
-      // 空调列表
-      if (showACList)
-        ...airConNotifier.allAirCons.entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text(entry.value.name),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexAirConPage;
-              });
-            },
-          );
-        }),
-
-      // sideBarItem(
-      //     indexCurtainConfig, '窗帘配置', Icons.curtains_closed, showCurtainList,
-      //     () {
-      //   showCurtainList = !showCurtainList;
-      // }),
+      ...buildItemList(showACList, airConNotifier.allAirCons, indexAirConPage),
 
       sideBarItem(
           indexRS485Page, '485配置', Icons.electrical_services, showRS485List,
           () {
         showRS485List = !showRS485List;
       }),
-      if (showRS485List)
-        ...rs485Notifier.allCommands.entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text(entry.value.name),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexRS485Page;
-              });
-            },
-          );
-        }),
+      ...buildItemList(showRS485List, rs485Notifier.allCommands, indexRS485Page),
 
       sideBarItem(
           indexActionGroupPage, '动作配置', Icons.local_movies, showActionList, () {
         showActionList = !showActionList;
       }),
-      if (showActionList)
-        ...actionGroupNotifier.allActionGroup.entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text(entry.value.name),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexActionGroupPage;
-              });
-            },
-          );
-        }),
+      ...buildItemList(showActionList, actionGroupNotifier.allActionGroup, indexActionGroupPage),
+      
       Divider(height: 3),
+
       sideBarItem(
           indexPanelPage, '面板配置', Icons.border_all_rounded, showPanelList, () {
         showPanelList = !showPanelList;
       }),
-      if (showPanelList)
-        ...panelNotifier.allPanel.asMap().entries.map((entry) {
-          return InkWell(
-            child: Padding(
-              padding: EdgeInsets.only(left: 60.0),
-              child: Row(
-                children: [
-                  Text(entry.value.name),
-                ],
-              ),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedIndex = indexPanelPage;
-              });
-            },
-          );
-        }),
+      ...buildItemList(showPanelList, panelNotifier.allPanel, indexPanelPage),
 
       sideBarItem(indexBoardInputPage, "输入配置", Icons.developer_board,
           showBoardInputList, () {
         showBoardInputList = !showBoardInputList;
       }),
+      // 不管, 这里逻辑不一样
       if (showBoardInputList)
         ...boardNotifier.allBoard.asMap().entries.map((entry) {
           return InkWell(
@@ -297,6 +195,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Divider(height: 3),
       // 生成json的按钮
       InkWell(
+        canRequestFocus: false,
         onTap: () {
           generateJson();
         },
@@ -312,6 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       // 上传json
       InkWell(
+        canRequestFocus: false,
         onTap: () {
           uploadAndParseJson();
         },
@@ -359,6 +259,7 @@ class _MyHomePageState extends State<MyHomePage> {
   InkWell sideBarItem(int index, String name, IconData icon, bool openDrawer,
       Function onPressed) {
     return InkWell(
+      canRequestFocus: false,
       onTap: () {
         setState(() {
           _selectedIndex = index;
@@ -376,19 +277,53 @@ class _MyHomePageState extends State<MyHomePage> {
                     color:
                         _selectedIndex == index ? Colors.white : Colors.black)),
             Spacer(),
-            IconButton(
-                icon: Icon(openDrawer
-                    ? Icons.keyboard_arrow_down
-                    : Icons.keyboard_arrow_left),
-                onPressed: () {
-                  setState(() {
-                    onPressed();
-                  });
-                }),
+            ExcludeFocus(
+              child: IconButton(
+                  icon: Icon(openDrawer
+                      ? Icons.keyboard_arrow_down
+                      : Icons.keyboard_arrow_left),
+                  onPressed: () {
+                    setState(() {
+                      onPressed();
+                    });
+                  }),
+            ),
           ],
         ),
       ),
     );
+  }
+  // 构建侧边栏之下的展开抽屉
+  List<Widget> buildItemList(bool openDrawer, dynamic data, int pageIndex) {
+    if (!openDrawer) return [];
+
+    Map items = {};
+    if (data is Map) {
+      items = data;
+    } else if (data is List) {
+      items = data.asMap();
+    }
+
+    return items.entries.map((entry) {
+      return InkWell(
+        canRequestFocus: false,
+        child: Padding(
+          padding: EdgeInsets.only(left: 60.0),
+          child: Row(
+            children: [
+              Flexible(
+                  child:
+                      Text(entry.value.name, overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+        ),
+        onTap: () {
+          setState(() {
+            _selectedIndex = pageIndex;
+          });
+        },
+      );
+    }).toList();
   }
 
   // 决定显示哪个页面
@@ -551,6 +486,14 @@ class _MyHomePageState extends State<MyHomePage> {
               .map((item) => AirCon.fromJson(item))
               .toList();
           acConfigNotifier.deserializationUpdate(newAirCons);
+
+          final rs485CommandNotifier =
+              // ignore: use_build_context_synchronously
+              Provider.of<RS485ConfigNotifier>(context, listen: false);
+          final newCommands = (jsonData['485指令码列表'] as List)
+              .map((item) => RS485Command.fromJson(item))
+              .toList();
+          rs485CommandNotifier.deserializationUpdate(newCommands);
 
           final actionGroupNotifier =
               // ignore: use_build_context_synchronously

@@ -138,6 +138,7 @@ class ACConfigPageState extends State<ACConfigPage> {
                     );
                   },
                 ),
+                SizedBox(height: 80)
               ],
             ),
           ),

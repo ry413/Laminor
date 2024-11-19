@@ -66,6 +66,7 @@ class RS485ConfigPageState extends State<RS485ConfigPage> {
                     );
                   },
                 ),
+                SizedBox(height: 80)
               ],
             ),
           ),
@@ -173,6 +174,7 @@ class _RS485WidgetState extends State<RS485Widget> {
             Tooltip(
               message: '删除',
               child: InkWell(
+                canRequestFocus: false,
                 onTap: () => widget.onDelete(),
                 child: Icon(
                   Icons.delete_forever,

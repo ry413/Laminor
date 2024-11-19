@@ -67,6 +67,7 @@ class LampConfigPageState extends State<LampConfigPage> {
                     );
                   },
                 ),
+                SizedBox(height: 80)
               ],
             ),
           ),
@@ -167,16 +168,7 @@ class _LampWidgetState extends State<LampWidget> {
                   });
                 }),
             Spacer(),
-            Tooltip(
-              message: '删除',
-              child: InkWell(
-                onTap: () => widget.onDelete(),
-                child: Icon(
-                  Icons.delete_forever,
-                  size: 20, // 图标大小
-                ),
-              ),
-            ),
+            DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete()),
             SizedBox(width: 40),
             ReorderableDragStartListener(
                 index: widget.index, child: Icon(Icons.drag_handle))

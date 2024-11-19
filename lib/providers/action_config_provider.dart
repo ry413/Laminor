@@ -9,6 +9,7 @@ enum ActionType {
   airCon, // 操作空调
   curtain, // 操作窗帘
   rs485, // 操作485
+  relay,    // 直接操作继电器
 
   actionGroup, // 调用动作组
   delay, // 延时
@@ -25,7 +26,8 @@ extension ActionTypeExtension on ActionType {
         return '窗帘';
       case ActionType.rs485:
         return '485';
-
+      case ActionType.relay:
+        return '继电器';
       // 特殊
       case ActionType.actionGroup:
         return '动作组';
@@ -66,6 +68,8 @@ class Action {
         break;
       case ActionType.rs485:
         break;
+      case ActionType.relay:
+        break;
       case ActionType.actionGroup:
         break;
       case ActionType.delay:
@@ -98,6 +102,8 @@ class Action {
       case ActionType.curtain:
         break;
       case ActionType.rs485:
+        break;
+      case ActionType.relay:
         break;
       case ActionType.actionGroup:
         break;

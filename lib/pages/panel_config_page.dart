@@ -299,16 +299,23 @@ class _PanelWidgetState extends State<PanelWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CustomDropdown<int>(
-                      selectedValue:
-                          widget.panel.buttons[index].actionGroupUids[i],
-                      items: allActionGroup.keys.toList(),
-                      itemLabel: (item) => allActionGroup[item]!.name,
-                      onChanged: (uid) {
-                        setState(() {
-                          widget.panel.buttons[index].actionGroupUids[i] = uid!;
-                        });
-                      }),
+                  Flexible(
+                    child: CustomDropdown<int>(
+                        selectedValue: allActionGroup.containsKey(
+                                widget.panel.buttons[index].actionGroupUids[i])
+                            ? allActionGroup[widget
+                                    .panel.buttons[index].actionGroupUids[i]]!
+                                .uid
+                            : allActionGroup.keys.first,
+                        items: allActionGroup.keys.toList(),
+                        itemLabel: (item) => allActionGroup[item]!.name,
+                        onChanged: (uid) {
+                          setState(() {
+                            widget.panel.buttons[index].actionGroupUids[i] =
+                                uid!;
+                          });
+                        }),
+                  ),
                   DeleteBtnDense(
                       message: '删除动作',
                       onDelete: () {
