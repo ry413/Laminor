@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui_web';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +17,7 @@ import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:provider/provider.dart';
-import 'dart:html' as html;
+import 'web_export_stub.dart' if (dart.library.html) 'web_export.dart';
 
 void main() {
   runApp(
@@ -132,7 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
           showBoardOutputList, () {
         showBoardOutputList = !showBoardOutputList;
       }),
-      ...buildItemList(showBoardOutputList, boardNotifier.allOutputs, indexBoardOutputPage),
+      ...buildItemList(
+          showBoardOutputList, boardNotifier.allOutputs, indexBoardOutputPage),
 
       Divider(height: 3),
 
@@ -140,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
         showLampList = !showLampList;
       }),
       ...buildItemList(showLampList, lampNotifier.allLamps, indexLampPage),
-      
+
       sideBarItem(indexAirConPage, "空调配置", Icons.ac_unit_rounded, showACList,
           () {
         showACList = !showACList;
@@ -152,14 +151,16 @@ class _MyHomePageState extends State<MyHomePage> {
           () {
         showRS485List = !showRS485List;
       }),
-      ...buildItemList(showRS485List, rs485Notifier.allCommands, indexRS485Page),
+      ...buildItemList(
+          showRS485List, rs485Notifier.allCommands, indexRS485Page),
 
       sideBarItem(
           indexActionGroupPage, '动作配置', Icons.local_movies, showActionList, () {
         showActionList = !showActionList;
       }),
-      ...buildItemList(showActionList, actionGroupNotifier.allActionGroup, indexActionGroupPage),
-      
+      ...buildItemList(showActionList, actionGroupNotifier.allActionGroup,
+          indexActionGroupPage),
+
       Divider(height: 3),
 
       sideBarItem(
@@ -197,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
       InkWell(
         canRequestFocus: false,
         onTap: () {
-          generateJson();
+          generateAndDownloadJson();
         },
         child: Row(
           children: [
@@ -209,11 +210,28 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+      // 发送
+      if (!kIsWeb)
+        InkWell(
+          canRequestFocus: false,
+          onTap: () {
+            generateAndSendJson();
+          },
+          child: Row(
+            children: [
+              SizedBox(width: 12),
+              Icon(Icons.send_and_archive),
+              SizedBox(width: 6),
+              Text('发送Json'),
+              SizedBox(width: 40, height: 40),
+            ],
+          ),
+        ),
       // 上传json
       InkWell(
         canRequestFocus: false,
         onTap: () {
-          uploadAndParseJson();
+          uploadAndParseJsonDesktop(context);
         },
         child: Row(
           children: [
@@ -293,6 +311,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
   // 构建侧边栏之下的展开抽屉
   List<Widget> buildItemList(bool openDrawer, dynamic data, int pageIndex) {
     if (!openDrawer) return [];
@@ -351,7 +370,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // 生成并下载json文件
-  Future<void> generateJson() async {
+  Future<void> generateAndDownloadJson() async {
     final boardConfigNotifier =
         Provider.of<BoardConfigNotifier>(context, listen: false);
     final lampConfigNotifier =
@@ -386,30 +405,61 @@ class _MyHomePageState extends State<MyHomePage> {
     };
     String jsonStr = jsonEncode(fullConfig);
 
-    String? selectedPath;
-
     if (kIsWeb) {
-      final bytes = utf8.encode(jsonStr);
-      final blob = html.Blob([bytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", "rcu_config.json")
-        ..click();
-      html.Url.revokeObjectUrl(url);
-      return;
-    } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      selectedPath = await FilePicker.platform.getDirectoryPath();
-      if (selectedPath == null) {
-        return;
+      // 使用 web_export.dart 中的导出函数处理 Web 平台
+      downloadJsonForWeb(jsonStr, "rcu_config.json");
+    } else {
+      String? selectedPath;
+
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        selectedPath = await FilePicker.platform.getDirectoryPath();
+        if (selectedPath == null) {
+          return;
+        }
+      }
+      if (selectedPath != null) {
+        String path = '$selectedPath/rcu_config.json';
+        File file = File(path);
+        await file.writeAsString(jsonStr);
       }
     }
-    if (selectedPath != null) {
-      String path = '$selectedPath/rcu_config.json';
-      File file = File(path);
-      await file.writeAsString(jsonStr);
-    }
+  }
 
-    // sendJsonOverTcp(jsonStr, '192.168.2.15', 8080);
+  Future<void> generateAndSendJson() async {
+    final boardConfigNotifier =
+        Provider.of<BoardConfigNotifier>(context, listen: false);
+    final lampConfigNotifier =
+        Provider.of<LampNotifier>(context, listen: false);
+    final acConfigNotifier =
+        Provider.of<AirConNotifier>(context, listen: false);
+    final rs485CommandNotifier =
+        Provider.of<RS485ConfigNotifier>(context, listen: false);
+    final actionGroupNotifier =
+        Provider.of<ActionConfigNotifier>(context, listen: false);
+    final panelConfigNotifier =
+        Provider.of<PanelConfigNotifier>(context, listen: false);
+
+    Map<String, dynamic> fullConfig = {
+      '板子列表':
+          boardConfigNotifier.allBoard.map((board) => board.toJson()).toList(),
+      '灯列表': lampConfigNotifier.allLamps.values
+          .map((lamp) => lamp.toJson())
+          .toList(),
+      '空调通用配置': acConfigNotifier.toJson(),
+      '空调列表': acConfigNotifier.allAirCons.values
+          .map((acConfig) => acConfig.toJson())
+          .toList(),
+      '485指令码列表': rs485CommandNotifier.allCommands.values
+          .map((command) => command.toJson())
+          .toList(),
+      '动作组列表': actionGroupNotifier.allActionGroup.values
+          .map((actionGroup) => actionGroup.toJson())
+          .toList(),
+      '面板列表':
+          panelConfigNotifier.allPanel.map((panel) => panel.toJson()).toList(),
+    };
+    String jsonStr = jsonEncode(fullConfig);
+    sendJsonOverTcp(jsonStr, '192.168.2.31', 8080);
   }
 
   // 将 JSON 字符串通过 TCP 发送
@@ -446,72 +496,148 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> uploadAndParseJson() async {
-    // 创建文件上传控件
-    html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
-    uploadInput.accept = '.json'; // 仅接受 JSON 文件
-    uploadInput.click(); // 模拟点击打开文件选择器
+  // web
+  // Future<void> uploadAndParseJson() async {
+  //   // 创建文件上传控件
+  //   html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+  //   uploadInput.accept = '.json'; // 仅接受 JSON 文件
+  //   uploadInput.click(); // 模拟点击打开文件选择器
 
-    // 监听文件选择事件
-    uploadInput.onChange.listen((e) {
-      final file = uploadInput.files?.first;
-      if (file != null) {
-        final reader = html.FileReader();
-        reader.readAsText(file);
-        reader.onLoadEnd.listen((e) {
-          final jsonString = reader.result as String;
-          final Map<String, dynamic> jsonData = jsonDecode(jsonString);
+  //   // 监听文件选择事件
+  //   uploadInput.onChange.listen((e) {
+  //     final file = uploadInput.files?.first;
+  //     if (file != null) {
+  //       final reader = html.FileReader();
+  //       reader.readAsText(file);
+  //       reader.onLoadEnd.listen((e) {
+  //         final jsonString = reader.result as String;
+  //         final Map<String, dynamic> jsonData = jsonDecode(jsonString);
 
-          final boardConfigNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<BoardConfigNotifier>(context, listen: false);
-          final newBoards = (jsonData['板子列表'] as List)
-              .map((item) => BoardConfig.fromJson(item))
-              .toList();
-          boardConfigNotifier.deserializationUpdate(newBoards);
+  //         final boardConfigNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<BoardConfigNotifier>(context, listen: false);
+  //         final newBoards = (jsonData['板子列表'] as List)
+  //             .map((item) => BoardConfig.fromJson(item))
+  //             .toList();
+  //         boardConfigNotifier.deserializationUpdate(newBoards);
 
-          final lampConfigNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<LampNotifier>(context, listen: false);
-          final newLamps = (jsonData['灯列表'] as List)
-              .map((item) => Lamp.fromJson(item))
-              .toList();
-          lampConfigNotifier.deserializationUpdate(newLamps);
+  //         final lampConfigNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<LampNotifier>(context, listen: false);
+  //         final newLamps = (jsonData['灯列表'] as List)
+  //             .map((item) => Lamp.fromJson(item))
+  //             .toList();
+  //         lampConfigNotifier.deserializationUpdate(newLamps);
 
-          final acConfigNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<AirConNotifier>(context, listen: false);
-          acConfigNotifier.fromJson(jsonData['空调通用配置']);
-          final newAirCons = (jsonData['空调列表'] as List)
-              .map((item) => AirCon.fromJson(item))
-              .toList();
-          acConfigNotifier.deserializationUpdate(newAirCons);
+  //         final acConfigNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<AirConNotifier>(context, listen: false);
+  //         acConfigNotifier.fromJson(jsonData['空调通用配置']);
+  //         final newAirCons = (jsonData['空调列表'] as List)
+  //             .map((item) => AirCon.fromJson(item))
+  //             .toList();
+  //         acConfigNotifier.deserializationUpdate(newAirCons);
 
-          final rs485CommandNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<RS485ConfigNotifier>(context, listen: false);
-          final newCommands = (jsonData['485指令码列表'] as List)
-              .map((item) => RS485Command.fromJson(item))
-              .toList();
-          rs485CommandNotifier.deserializationUpdate(newCommands);
+  //         final rs485CommandNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<RS485ConfigNotifier>(context, listen: false);
+  //         final newCommands = (jsonData['485指令码列表'] as List)
+  //             .map((item) => RS485Command.fromJson(item))
+  //             .toList();
+  //         rs485CommandNotifier.deserializationUpdate(newCommands);
 
-          final actionGroupNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<ActionConfigNotifier>(context, listen: false);
-          final newActionGroups = (jsonData['动作组列表'] as List)
-              .map((item) => ActionGroup.fromJson(item))
-              .toList();
-          actionGroupNotifier.deserializationUpdate(newActionGroups);
+  //         final actionGroupNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<ActionConfigNotifier>(context, listen: false);
+  //         final newActionGroups = (jsonData['动作组列表'] as List)
+  //             .map((item) => ActionGroup.fromJson(item))
+  //             .toList();
+  //         actionGroupNotifier.deserializationUpdate(newActionGroups);
 
-          final panelConfigNotifier =
-              // ignore: use_build_context_synchronously
-              Provider.of<PanelConfigNotifier>(context, listen: false);
-          final newPanels = (jsonData['面板列表'] as List)
-              .map((item) => Panel.fromJson(item))
-              .toList();
-          panelConfigNotifier.deserializationUpdate(newPanels);
-        });
+  //         final panelConfigNotifier =
+  //             // ignore: use_build_context_synchronously
+  //             Provider.of<PanelConfigNotifier>(context, listen: false);
+  //         final newPanels = (jsonData['面板列表'] as List)
+  //             .map((item) => Panel.fromJson(item))
+  //             .toList();
+  //         panelConfigNotifier.deserializationUpdate(newPanels);
+  //       });
+  //     }
+  //   });
+  // }
+
+  Future<void> uploadAndParseJsonDesktop(BuildContext context) async {
+    // 使用 FilePicker 打开文件选择对话框
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'], // 限制只选择 JSON 文件
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final filePath = result.files.single.path!;
+      try {
+        final jsonString = await File(filePath).readAsString();
+        final Map<String, dynamic> jsonData = jsonDecode(jsonString);
+
+        // 解析 JSON 数据并更新对应的配置
+        final boardConfigNotifier =
+            Provider.of<BoardConfigNotifier>(context, listen: false);
+        final newBoards = (jsonData['板子列表'] as List)
+            .map((item) => BoardConfig.fromJson(item))
+            .toList();
+        boardConfigNotifier.deserializationUpdate(newBoards);
+
+        final lampConfigNotifier =
+            Provider.of<LampNotifier>(context, listen: false);
+        final newLamps = (jsonData['灯列表'] as List)
+            .map((item) => Lamp.fromJson(item))
+            .toList();
+        lampConfigNotifier.deserializationUpdate(newLamps);
+
+        final acConfigNotifier =
+            Provider.of<AirConNotifier>(context, listen: false);
+        acConfigNotifier.fromJson(jsonData['空调通用配置']);
+        final newAirCons = (jsonData['空调列表'] as List)
+            .map((item) => AirCon.fromJson(item))
+            .toList();
+        acConfigNotifier.deserializationUpdate(newAirCons);
+
+        final rs485CommandNotifier =
+            Provider.of<RS485ConfigNotifier>(context, listen: false);
+        final newCommands = (jsonData['485指令码列表'] as List)
+            .map((item) => RS485Command.fromJson(item))
+            .toList();
+        rs485CommandNotifier.deserializationUpdate(newCommands);
+
+        final actionGroupNotifier =
+            Provider.of<ActionConfigNotifier>(context, listen: false);
+        final newActionGroups = (jsonData['动作组列表'] as List)
+            .map((item) => ActionGroup.fromJson(item))
+            .toList();
+        actionGroupNotifier.deserializationUpdate(newActionGroups);
+
+        final panelConfigNotifier =
+            Provider.of<PanelConfigNotifier>(context, listen: false);
+        final newPanels = (jsonData['面板列表'] as List)
+            .map((item) => Panel.fromJson(item))
+            .toList();
+        panelConfigNotifier.deserializationUpdate(newPanels);
+
+        // 提示用户上传成功
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("JSON 文件上传并解析成功")),
+        );
+      } catch (e) {
+        // 提示解析错误
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("解析 JSON 文件失败: $e")),
+        );
       }
-    });
+    } else {
+      // 用户取消选择文件
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("未选择任何文件")),
+      );
+    }
   }
 }

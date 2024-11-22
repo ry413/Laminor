@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/widgets/common_widgets.dart';
@@ -176,6 +177,7 @@ class _PanelWidgetState extends State<PanelWidget> {
               children: [
                 // 面板ID输入框
                 IdInputField(
+                  label: "面板ID: ",
                   controller: panelIdController,
                   initialValue: widget.panel.id,
                   onChanged: (value) {
@@ -217,29 +219,10 @@ class _PanelWidgetState extends State<PanelWidget> {
               ],
             ),
             SizedBox(height: 16),
-            // 面板按钮们
-            Container(
-              width: calculateWidth(widget.panel.type,
-                  buttonSize: 175, spacing: 8, padding: 8),
-              height: calculateHeight(widget.panel.type,
-                  buttonSize: 175, spacing: 8, padding: 8),
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(215, 216, 217, 1),
-                border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: GridView.count(
-                crossAxisCount: getColumnCount(widget.panel.type),
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+            Column(
                 children: List.generate(widget.panel.buttons.length, (index) {
-                  return buildPanelButton(index, buttonIdControllers);
-                }),
-              ),
-            )
+              return buildPanelButton(index, buttonIdControllers);
+            })),
           ],
         ),
       ),
@@ -255,7 +238,7 @@ class _PanelWidgetState extends State<PanelWidget> {
     return Container(
         padding: EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: const Color.fromRGBO(186, 187, 188, 1), // 按键背景色
+          color: const Color.fromARGB(255, 208, 215, 223), // 按键背景色
           border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -266,6 +249,7 @@ class _PanelWidgetState extends State<PanelWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IdInputField(
+                    label: "按钮ID:",
                     controller: controllers[index],
                     initialValue: widget.panel.buttons[index].id,
                     onChanged: (value) {
@@ -286,6 +270,10 @@ class _PanelWidgetState extends State<PanelWidget> {
                             4) {
                           widget.panel.buttons[index].actionGroupUids
                               .add(allActionGroup.keys.first);
+                          widget.panel.buttons[index].pressedPolitActions
+                              .add(ButtonPolitAction.lightOn);
+                          widget.panel.buttons[index].pressedOtherPolitActions
+                              .add(ButtonOtherPolitAction.ingore);
                         }
                       });
                     },
@@ -297,30 +285,67 @@ class _PanelWidgetState extends State<PanelWidget> {
                 i < widget.panel.buttons[index].actionGroupUids.length;
                 i++) ...[
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: CustomDropdown<int>(
-                        selectedValue: allActionGroup.containsKey(
-                                widget.panel.buttons[index].actionGroupUids[i])
-                            ? allActionGroup[widget
-                                    .panel.buttons[index].actionGroupUids[i]]!
-                                .uid
-                            : allActionGroup.keys.first,
-                        items: allActionGroup.keys.toList(),
-                        itemLabel: (item) => allActionGroup[item]!.name,
-                        onChanged: (uid) {
-                          setState(() {
-                            widget.panel.buttons[index].actionGroupUids[i] =
-                                uid!;
-                          });
-                        }),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: CustomDropdown<int>(
+                              selectedValue: allActionGroup.containsKey(widget
+                                      .panel.buttons[index].actionGroupUids[i])
+                                  ? allActionGroup[widget.panel.buttons[index]
+                                          .actionGroupUids[i]]!
+                                      .uid
+                                  : allActionGroup.keys.first,
+                              items: allActionGroup.keys.toList(),
+                              itemLabel: (item) => allActionGroup[item]!.name,
+                              onChanged: (uid) {
+                                setState(() {
+                                  widget.panel.buttons[index]
+                                      .actionGroupUids[i] = uid!;
+                                });
+                              }),
+                        ),
+                        SizedBox(width: 10),
+                        Text('按下之后将指示灯'),
+                        SizedBox(width: 10),
+                        CustomDropdown<ButtonPolitAction>(
+                            selectedValue: widget
+                                .panel.buttons[index].pressedPolitActions[i],
+                            items: ButtonPolitAction.values,
+                            itemLabel: (item) => item.displayName,
+                            onChanged: (value) {
+                              setState(() {
+                                widget.panel.buttons[index]
+                                    .pressedPolitActions[i] = value!;
+                              });
+                            }),
+                        Text('将其他按钮的指示灯'),
+                        SizedBox(width: 10),
+                        CustomDropdown<ButtonOtherPolitAction>(
+                            selectedValue: widget.panel.buttons[index]
+                                .pressedOtherPolitActions[i],
+                            items: ButtonOtherPolitAction.values,
+                            itemLabel: (item) => item.displayName,
+                            onChanged: (value) {
+                              setState(() {
+                                widget.panel.buttons[index]
+                                    .pressedOtherPolitActions[i] = value!;
+                              });
+                            }),
+                      ],
+                    ),
                   ),
                   DeleteBtnDense(
                       message: '删除动作',
                       onDelete: () {
                         setState(() {
                           widget.panel.buttons[index].actionGroupUids
+                              .removeAt(i);
+                          widget.panel.buttons[index].pressedPolitActions
+                              .removeAt(i);
+                          widget.panel.buttons[index].pressedOtherPolitActions
                               .removeAt(i);
                         });
                       })

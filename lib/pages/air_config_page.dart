@@ -214,6 +214,7 @@ class _AirConWidgetState extends State<AirConWidget> {
             Row(children: [
               // 空调ID输入框
               IdInputField(
+                  label: "空调ID: ",
                   controller: idController,
                   initialValue: widget.airCon.id,
                   onChanged: (value) {

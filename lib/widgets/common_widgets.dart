@@ -129,11 +129,13 @@ class _BoardOutputDropdownState extends State<BoardOutputDropdown> {
 
 class IdInputField extends StatefulWidget {
   final TextEditingController controller;
+  final String label;
   final int initialValue;
   final Function(int) onChanged;
 
   IdInputField(
       {required this.controller,
+      required this.label,
       required this.initialValue,
       required this.onChanged});
 
@@ -148,7 +150,7 @@ class _IDInputFieldState extends State<IdInputField> {
       children: [
         Padding(
           padding: const EdgeInsets.only(right: 4.0),
-          child: Text('ID: ', style: Theme.of(context).textTheme.bodyMedium),
+          child: Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
         ),
         Padding(
           padding: const EdgeInsets.only(right: 8.0),

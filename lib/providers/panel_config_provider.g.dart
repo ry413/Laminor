@@ -11,12 +11,22 @@ PanelButton _$PanelButtonFromJson(Map<String, dynamic> json) => PanelButton(
       actionGroupUids: (json['actionGroupUids'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
+      pressedPolitActions: PanelButton._buttonPolitActionListFromIndex(
+          json['pressedPolitActions'] as List),
+      pressedOtherPolitActions:
+          PanelButton._buttonOtherPolitActionListFromIndex(
+              json['pressedOtherPolitActions'] as List),
     );
 
 Map<String, dynamic> _$PanelButtonToJson(PanelButton instance) =>
     <String, dynamic>{
       'id': instance.id,
       'actionGroupUids': instance.actionGroupUids,
+      'pressedPolitActions': PanelButton._buttonPolitActionListToIndex(
+          instance.pressedPolitActions),
+      'pressedOtherPolitActions':
+          PanelButton._buttonOtherPolitActionListToIndex(
+              instance.pressedOtherPolitActions),
     };
 
 Panel _$PanelFromJson(Map<String, dynamic> json) => Panel(
