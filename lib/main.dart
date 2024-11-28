@@ -7,12 +7,14 @@ import 'package:flutter_web_1/pages/action_config_page.dart';
 import 'package:flutter_web_1/pages/air_config_page.dart';
 import 'package:flutter_web_1/pages/board_input_page.dart';
 import 'package:flutter_web_1/pages/board_output_page.dart';
+import 'package:flutter_web_1/pages/curtain_config_page.dart';
 import 'package:flutter_web_1/pages/lamp_config_page.dart';
 import 'package:flutter_web_1/pages/panel_config_page.dart';
 import 'package:flutter_web_1/pages/rs485_config_page.dart';
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
+import 'package:flutter_web_1/providers/curtain_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
@@ -40,6 +42,9 @@ void main() {
         ),
         ChangeNotifierProvider(
           create: (context) => RS485ConfigNotifier(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => CurtainNotifier(),
         )
       ],
       child: MyApp(),
@@ -53,7 +58,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Namer App',
+      title: 'Laminor',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
@@ -96,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final boardNotifier = context.watch<BoardConfigNotifier>();
     final lampNotifier = context.watch<LampNotifier>();
     final airConNotifier = context.watch<AirConNotifier>();
+    final curtainNotifier = context.watch<CurtainNotifier>();
     final actionGroupNotifier = context.watch<ActionConfigNotifier>();
     final rs485Notifier = context.watch<RS485ConfigNotifier>();
     final panelNotifier = context.watch<PanelConfigNotifier>();
@@ -140,11 +146,18 @@ class _MyHomePageState extends State<MyHomePage> {
       }),
       ...buildItemList(showLampList, lampNotifier.allLamps, indexLampPage),
 
-      sideBarItem(indexAirConPage, "空调配置", Icons.ac_unit_rounded, showACList,
+      sideBarItem(indexAirConPage, '空调配置', Icons.ac_unit_rounded, showACList,
           () {
         showACList = !showACList;
       }),
       ...buildItemList(showACList, airConNotifier.allAirCons, indexAirConPage),
+
+      sideBarItem(
+          indexCurtainPage, '窗帘配置', Icons.curtains_closed, showCurtainList, () {
+        showCurtainList = !showCurtainList;
+      }),
+      ...buildItemList(
+          showCurtainList, curtainNotifier.allCurtains, indexCurtainPage),
 
       sideBarItem(
           indexRS485Page, '485配置', Icons.electrical_services, showRS485List,
@@ -364,6 +377,8 @@ class _MyHomePageState extends State<MyHomePage> {
         return BoardInputPage();
       case indexRS485Page:
         return RS485ConfigPage();
+      case indexCurtainPage:
+        return CurtainConfigPage();
       default:
         return Placeholder();
     }
@@ -377,6 +392,8 @@ class _MyHomePageState extends State<MyHomePage> {
         Provider.of<LampNotifier>(context, listen: false);
     final acConfigNotifier =
         Provider.of<AirConNotifier>(context, listen: false);
+    final curtainConfigNotifier =
+        Provider.of<CurtainNotifier>(context, listen: false);
     final rs485CommandNotifier =
         Provider.of<RS485ConfigNotifier>(context, listen: false);
     final actionGroupNotifier =
@@ -393,6 +410,9 @@ class _MyHomePageState extends State<MyHomePage> {
       '空调通用配置': acConfigNotifier.toJson(),
       '空调列表': acConfigNotifier.allAirCons.values
           .map((acConfig) => acConfig.toJson())
+          .toList(),
+      '窗帘列表': curtainConfigNotifier.allCurtains.values
+          .map((curtain) => curtain.toJson())
           .toList(),
       '485指令码列表': rs485CommandNotifier.allCommands.values
           .map((command) => command.toJson())
@@ -432,6 +452,8 @@ class _MyHomePageState extends State<MyHomePage> {
         Provider.of<LampNotifier>(context, listen: false);
     final acConfigNotifier =
         Provider.of<AirConNotifier>(context, listen: false);
+    final curtainConfigNotifier =
+        Provider.of<CurtainNotifier>(context, listen: false);
     final rs485CommandNotifier =
         Provider.of<RS485ConfigNotifier>(context, listen: false);
     final actionGroupNotifier =
@@ -449,6 +471,9 @@ class _MyHomePageState extends State<MyHomePage> {
       '空调列表': acConfigNotifier.allAirCons.values
           .map((acConfig) => acConfig.toJson())
           .toList(),
+      '窗帘列表': curtainConfigNotifier.allCurtains.values
+          .map((curtain) => curtain.toJson())
+          .toList(),
       '485指令码列表': rs485CommandNotifier.allCommands.values
           .map((command) => command.toJson())
           .toList(),
@@ -459,7 +484,7 @@ class _MyHomePageState extends State<MyHomePage> {
           panelConfigNotifier.allPanel.map((panel) => panel.toJson()).toList(),
     };
     String jsonStr = jsonEncode(fullConfig);
-    sendJsonOverTcp(jsonStr, '192.168.2.31', 8080);
+    sendJsonOverTcp(jsonStr, '192.168.2.21', 8080);
   }
 
   // 将 JSON 字符串通过 TCP 发送
@@ -601,6 +626,13 @@ class _MyHomePageState extends State<MyHomePage> {
             .map((item) => AirCon.fromJson(item))
             .toList();
         acConfigNotifier.deserializationUpdate(newAirCons);
+
+        final curtainConfigNotifier =
+            Provider.of<CurtainNotifier>(context, listen: false);
+        final newCurtains = (jsonData['窗帘列表'] as List)
+            .map((item) => Curtain.fromJson(item))
+            .toList();
+        curtainConfigNotifier.deserializationUpdate(newCurtains);
 
         final rs485CommandNotifier =
             Provider.of<RS485ConfigNotifier>(context, listen: false);

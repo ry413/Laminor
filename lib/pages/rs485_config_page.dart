@@ -130,7 +130,7 @@ class _RS485WidgetState extends State<RS485Widget> {
         color: Color.fromRGBO(233, 234, 235, 1),
         padding: const EdgeInsets.all(16.0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             // 指令码名字输入框
             IntrinsicWidth(
@@ -150,7 +150,8 @@ class _RS485WidgetState extends State<RS485Widget> {
                     rs485ConfigNotifier.updateWidget();
                   }),
             ),
-            SizedBox(width: 20),
+            Spacer(),
+            // SizedBox(width: 20),
             // 指令码本体输入框
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 250),
@@ -170,7 +171,7 @@ class _RS485WidgetState extends State<RS485Widget> {
                     rs485ConfigNotifier.updateWidget();
                   }),
             ),
-            Spacer(),
+            SizedBox(width: 60),
             Tooltip(
               message: '删除',
               child: InkWell(

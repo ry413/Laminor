@@ -9,7 +9,7 @@ enum ActionType {
   airCon, // 操作空调
   curtain, // 操作窗帘
   rs485, // 操作485
-  relay,    // 直接操作继电器
+  output,    // 直接操作继电器
 
   actionGroup, // 调用动作组
   delay, // 延时
@@ -26,8 +26,8 @@ extension ActionTypeExtension on ActionType {
         return '窗帘';
       case ActionType.rs485:
         return '485';
-      case ActionType.relay:
-        return '继电器';
+      case ActionType.output:
+        return '输出通道';
       // 特殊
       case ActionType.actionGroup:
         return '动作组';
@@ -41,15 +41,25 @@ extension ActionTypeExtension on ActionType {
 class Action {
   ActionType type;
   int? targetUID; // 目标的uid, 根据type来查对应的表, 只有type是delay时才会不存在
-  String operation;
+  String _operation;
   dynamic parameter; // operation的参数
 
-  Action({required this.type, this.operation = ''});
+  Action({required this.type})
+    : _operation = '';
+
+  set operation (String newValue) {
+    _operation = newValue;
+    if (_operation == '调光' || _operation == '延时') {
+      parameter = 0;
+    }
+  }
+  String get operation => _operation;
 
   factory Action.fromJson(Map<String, dynamic> json) {
     final type = ActionType.values[json['type'] as int];
     final operation = json['operation'] as String;
-    final action = Action(type: type, operation: operation);
+    final action = Action(type: type);
+    action.operation = operation;
 
     // 除了delay都有targetUID
     if (type != ActionType.delay) {
@@ -68,7 +78,7 @@ class Action {
         break;
       case ActionType.rs485:
         break;
-      case ActionType.relay:
+      case ActionType.output:
         break;
       case ActionType.actionGroup:
         break;
@@ -103,7 +113,7 @@ class Action {
         break;
       case ActionType.rs485:
         break;
-      case ActionType.relay:
+      case ActionType.output:
         break;
       case ActionType.actionGroup:
         break;

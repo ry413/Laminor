@@ -3,6 +3,7 @@ class UidManager {
   int _outputUid = 1;
   int _lampUid = 1;
   int _airConUid = 1;
+  int _curtainUid = 1;
   int _actionGroupUid = 1;
   int _rs485CommandUid = 1;
 
@@ -38,6 +39,14 @@ class UidManager {
   }
   void setAirConUid(int uid) {
     _airConUid = uid;
+  }
+
+  // 窗帘
+  int generateCurtainUid() {
+    return _curtainUid++;
+  }
+  void setCurtainUid(int uid) {
+    _curtainUid = uid;
   }
 
   // 动作组

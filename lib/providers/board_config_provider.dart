@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 part 'board_config_provider.g.dart';
 
-enum OutputType { relay, dryContact }
+enum OutputType { relay, dryContact, dimming }
 
 extension OutputTypeExtension on OutputType {
   String get displayName {
@@ -16,6 +16,8 @@ extension OutputTypeExtension on OutputType {
         return '继电器';
       case OutputType.dryContact:
         return '干接点';
+      case OutputType.dimming:
+        return '调光器';
     }
   }
 }

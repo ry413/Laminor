@@ -160,7 +160,7 @@ class _LampWidgetState extends State<LampWidget> {
                 }),
             // 继电器设定
             BoardOutputDropdown(
-                label: '电源',
+                label: widget.lamp.type == LampType.dimmableLight ? '调光器' : '电源',
                 selectedValue: widget.lamp.channelPowerUid,
                 onChanged: (newValue) {
                   setState(() {

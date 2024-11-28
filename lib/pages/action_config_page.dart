@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
+import 'package:flutter_web_1/providers/curtain_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:flutter_web_1/widgets/common_widgets.dart';
@@ -329,11 +330,12 @@ class _ActionWidgetState extends State<ActionWidget> {
   Widget _buildActionContent(int index) {
     List<Widget> widgets;
 
+    final allOutputs = context.watch<BoardConfigNotifier>().allOutputs;
     final allLamps = context.watch<LampNotifier>().allLamps;
     final allAirCons = context.watch<AirConNotifier>().allAirCons;
+    final allCurtains = context.watch<CurtainNotifier>().allCurtains;
     final allRS485Commands = context.watch<RS485ConfigNotifier>().allCommands;
     final allActionGroup = context.watch<ActionConfigNotifier>().allActionGroup;
-    final allOutputs = context.watch<BoardConfigNotifier>().allOutputs;
 
     // 灯
     if (widget.action.type == ActionType.lamp) {
@@ -361,8 +363,8 @@ class _ActionWidgetState extends State<ActionWidget> {
             SectionTitle(title: '至'),
             CustomDropdown<int>(
                 selectedValue: widget.action.parameter as int,
-                items: List.generate(10, (i) => i + 1),
-                itemLabel: (value) => '${value}0%',
+                items: List.generate(11, (i) => i),
+                itemLabel: (value) => '${value * 10}%',
                 onChanged: (value) {
                   setState(() {
                     widget.action.parameter = value;
@@ -383,6 +385,17 @@ class _ActionWidgetState extends State<ActionWidget> {
         buildOperationDropdown(AirCon.operations),
       ];
     }
+    // 窗帘
+    else if (widget.action.type == ActionType.curtain) {
+      repairUID(allCurtains);
+
+      widgets = [
+        SectionTitle(title: '对'),
+        buildTargetDropdown(allCurtains),
+        SectionTitle(title: '执行'),
+        buildOperationDropdown(Curtain.operations)
+      ];
+    }
     // 485
     else if (widget.action.type == ActionType.rs485) {
       repairUID(allRS485Commands);
@@ -393,8 +406,8 @@ class _ActionWidgetState extends State<ActionWidget> {
       ];
       widget.action.operation = '发送'; // 485就一种操作
     }
-    // 继电器
-    else if (widget.action.type == ActionType.relay) {
+    // 直接操控输出
+    else if (widget.action.type == ActionType.output) {
       repairUID(allOutputs);
 
       widgets = [
@@ -442,7 +455,11 @@ class _ActionWidgetState extends State<ActionWidget> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
                 setState(() {
-                  widget.action.parameter = int.tryParse(value);
+                  if (value.isEmpty) {
+                    widget.action.parameter = 0;
+                  } else {
+                    widget.action.parameter = int.parse(value);
+                  }
                 });
               }),
         ),
@@ -517,6 +534,7 @@ List<ActionType> getAvailableActionTypes(BuildContext context) {
   final allLamp = Provider.of<LampNotifier>(context, listen: false).allLamps;
   final allAirCon =
       Provider.of<AirConNotifier>(context, listen: false).allAirCons;
+  final allCurtain = Provider.of<CurtainNotifier>(context, listen: false).allCurtains;
   final allRS485Command =
       Provider.of<RS485ConfigNotifier>(context, listen: false).allCommands;
   final allOutputs =
@@ -534,12 +552,16 @@ List<ActionType> getAvailableActionTypes(BuildContext context) {
     availableTypes.add(ActionType.airCon);
   }
 
+  if (allCurtain.isNotEmpty) {
+    availableTypes.add(ActionType.curtain);
+  }
+
   if (allRS485Command.isNotEmpty) {
     availableTypes.add(ActionType.rs485);
   }
 
   if (allOutputs.isNotEmpty) {
-    availableTypes.add(ActionType.relay);
+    availableTypes.add(ActionType.output);
   }
 
   // 但是, 这个部件不就是动作组吗, 动作组难道会被删光?

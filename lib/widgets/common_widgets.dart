@@ -236,7 +236,11 @@ class _InputFieldState extends State<InputField> {
             cursorColor: Colors.brown,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
-              widget.onChanged(int.tryParse(value)!);
+              if (value.isEmpty) {
+                widget.onChanged(0);
+              } else {
+                widget.onChanged(int.parse(value));
+              }
             },
           ),
         ),

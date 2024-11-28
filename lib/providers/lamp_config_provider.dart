@@ -25,7 +25,7 @@ extension LampTypeExtension on LampType {
       case LampType.normalLight:
         return ['开', '关'];
       case LampType.dimmableLight:
-        return ['开', '关', '调光'];
+        return ['调光'];  // 调光灯就使用一个操作
     }
   }
 }
