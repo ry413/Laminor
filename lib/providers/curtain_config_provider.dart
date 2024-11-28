@@ -25,7 +25,7 @@ class Curtain {
   });
 
   static List<String> get operations {
-    return ["开", "关"];
+    return ["开", "关", "反转"];
   }
 
   factory Curtain.fromJson(Map<String, dynamic> json) => _$CurtainFromJson(json);
