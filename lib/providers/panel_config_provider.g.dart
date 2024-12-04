@@ -6,27 +6,17 @@ part of 'panel_config_provider.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-PanelButton _$PanelButtonFromJson(Map<String, dynamic> json) => PanelButton(
-      id: (json['id'] as num).toInt(),
-      actionGroupUids: (json['actionGroupUids'] as List<dynamic>)
-          .map((e) => (e as num).toInt())
-          .toList(),
-      pressedPolitActions: PanelButton._buttonPolitActionListFromIndex(
-          json['pressedPolitActions'] as List),
-      pressedOtherPolitActions:
-          PanelButton._buttonOtherPolitActionListFromIndex(
-              json['pressedOtherPolitActions'] as List),
+AtomicAction _$AtomicActionFromJson(Map<String, dynamic> json) => AtomicAction(
+      deviceUid: (json['deviceUid'] as num).toInt(),
+      operation: json['operation'] as String,
+      parameter: json['parameter'],
     );
 
-Map<String, dynamic> _$PanelButtonToJson(PanelButton instance) =>
+Map<String, dynamic> _$AtomicActionToJson(AtomicAction instance) =>
     <String, dynamic>{
-      'id': instance.id,
-      'actionGroupUids': instance.actionGroupUids,
-      'pressedPolitActions': PanelButton._buttonPolitActionListToIndex(
-          instance.pressedPolitActions),
-      'pressedOtherPolitActions':
-          PanelButton._buttonOtherPolitActionListToIndex(
-              instance.pressedOtherPolitActions),
+      'deviceUid': instance.deviceUid,
+      'operation': instance.operation,
+      'parameter': instance.parameter,
     };
 
 Panel _$PanelFromJson(Map<String, dynamic> json) => Panel(

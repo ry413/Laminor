@@ -94,12 +94,12 @@ class ConfigRowDropdown<T> extends StatelessWidget {
 
 class BoardOutputDropdown extends StatefulWidget {
   final String label;
-  final int selectedValue; // 这是UID, 而不是索引什么的
-  final void Function(int) onChanged;
+  final BoardOutput selectedOutput;
+  final void Function(BoardOutput) onChanged;
 
   BoardOutputDropdown(
       {required this.label,
-      required this.selectedValue,
+      required this.selectedOutput,
       required this.onChanged});
 
   @override
@@ -116,12 +116,13 @@ class _BoardOutputDropdownState extends State<BoardOutputDropdown> {
       children: [
         Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
         CustomDropdown<BoardOutput>(
-            selectedValue:
-                allOutput[widget.selectedValue] ?? allOutput.values.first,
+            selectedValue: allOutput.containsValue(widget.selectedOutput)
+                ? widget.selectedOutput
+                : allOutput.values.first,
             items: allOutput.values.toList(),
             itemLabel: (output) =>
                 '${output.name} (板 ${output.hostBoardId} 输出 ${output.channel})',
-            onChanged: (output) => widget.onChanged(output!.uid)),
+            onChanged: (output) => widget.onChanged(output!)),
       ],
     );
   }
@@ -150,7 +151,8 @@ class _IDInputFieldState extends State<IdInputField> {
       children: [
         Padding(
           padding: const EdgeInsets.only(right: 4.0),
-          child: Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
+          child:
+              Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
         ),
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
@@ -377,9 +379,11 @@ class CustomDropdownState<T> extends State<CustomDropdown<T>> {
 class DeleteBtnDense extends StatelessWidget {
   final String message;
   final Function onDelete;
+  final double size;
   const DeleteBtnDense({
     required this.message,
     required this.onDelete,
+    required this.size
   });
 
   @override
@@ -391,12 +395,13 @@ class DeleteBtnDense extends StatelessWidget {
         onTap: () => onDelete(),
         child: Icon(
           Icons.delete_forever,
-          size: 20,
+          size: size,
         ),
       ),
     );
   }
 }
+
 
 // 悬浮于页面右下角的按钮
 class FloatButton extends StatelessWidget {

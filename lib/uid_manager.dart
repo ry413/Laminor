@@ -1,10 +1,15 @@
+import 'dart:math';
+
 class UidManager {
   // 各类型的自增值
   int _outputUid = 1;
-  int _lampUid = 1;
+
+  int _deviceUid = 0;       // 所有Device用同一个uid计数
+
   int _airConUid = 1;
   int _curtainUid = 1;
   int _actionGroupUid = 1;
+
   int _rs485CommandUid = 1;
 
   // 单例模式
@@ -25,14 +30,6 @@ class UidManager {
     _outputUid = uid;
   }
 
-  // 灯
-  int generateLampUid() {
-    return _lampUid++;
-  }
-  void setLampUid(int uid) {
-    _lampUid = uid;
-  }
-
   // 空调
   int generateAirConUid() {
     return _airConUid++;
@@ -41,20 +38,16 @@ class UidManager {
     _airConUid = uid;
   }
 
-  // 窗帘
-  int generateCurtainUid() {
-    return _curtainUid++;
-  }
-  void setCurtainUid(int uid) {
-    _curtainUid = uid;
-  }
 
-  // 动作组
-  int generateActionGroupUid() {
-    return _actionGroupUid++;
+
+  void resetDeviceUid() {
+    _deviceUid = 0;
   }
-  void setActionGroupUid(int uid) {
-    _actionGroupUid = uid;
+  int generateDeviceUid() {
+    return ++_deviceUid;
+  }
+  void updateDeviceUid(int uid) {
+    _deviceUid = max(uid, _deviceUid);
   }
 
   // 485指令码
@@ -64,4 +57,5 @@ class UidManager {
   void setRS485CommandUid(int uid) {
     _rs485CommandUid = uid;
   }
+
 }

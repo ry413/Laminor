@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_web_1/providers/action_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class BoardInputPage extends StatefulWidget {
@@ -133,8 +132,7 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                                 size: 24,
                               ),
                               onPressed: () {
-                                boardNotifier.addInputToBoard(
-                                    context, widget.board.id);
+                                boardNotifier.addInputToBoard(widget.board.id);
                               },
                             ),
                           ),
@@ -207,7 +205,6 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
 
   @override
   Widget build(BuildContext context) {
-    final allActionGroup = context.watch<ActionConfigNotifier>().allActionGroup;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -260,28 +257,28 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
             ),
           ),
           // 执行动作
-          Expanded(
-              flex: 2,
-              child: Container(
-                padding: EdgeInsets.only(right: 30),
-                child: Row(
-                  children: [
-                    CustomDropdown<ActionGroup>(
-                        selectedValue:
-                            allActionGroup[widget.input.actionGroupUid] ??
-                                allActionGroup.values.first,
-                        items: allActionGroup.values.toList(),
-                        itemLabel: (actionGroup) => actionGroup.name,
-                        onChanged: (actionGroup) {
-                          setState(() {
-                            widget.input.actionGroupUid = actionGroup!.uid;
-                          });
-                        }),
-                    Spacer(),
-                    DeleteBtnDense(message: '删除通道', onDelete: widget.onDelete)
-                  ],
-                ),
-              )),
+          // Expanded(
+          //     flex: 2,
+          //     child: Container(
+          //       padding: EdgeInsets.only(right: 30),
+          //       child: Row(
+          //         children: [
+          //           CustomDropdown<ActionGroup>(
+          //               selectedValue:
+          //                   allActionGroup[widget.input.actionGroupUid] ??
+          //                       allActionGroup.values.first,
+          //               items: allActionGroup.values.toList(),
+          //               itemLabel: (actionGroup) => actionGroup.name,
+          //               onChanged: (actionGroup) {
+          //                 setState(() {
+          //                   widget.input.actionGroupUid = actionGroup!.uid;
+          //                 });
+          //               }),
+          //           Spacer(),
+          //           DeleteBtnDense(message: '删除通道', onDelete: widget.onDelete)
+          //         ],
+          //       ),
+          //     )),
         ],
       ),
     );

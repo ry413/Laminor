@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide Action;
 import 'package:flutter/services.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class BoardOutputPage extends StatefulWidget {
@@ -317,6 +317,7 @@ class _BoardOutputUnitState extends State<BoardOutputUnit> {
                   DeleteBtnDense(
                     message: '删除通道',
                     onDelete: widget.onDelete,
+                    size: 20,
                   ),
                 ],
               ),

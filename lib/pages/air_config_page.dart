@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class ACConfigPage extends StatefulWidget {
@@ -290,61 +290,61 @@ class _AirConWidgetState extends State<AirConWidget> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  BoardOutputDropdown(
-                    label: '电源',
-                    selectedValue: widget.airCon.channelPowerUid,
-                    onChanged: (newValue) {
-                      setState(() {
-                        widget.airCon.channelPowerUid = newValue;
-                      });
-                    },
-                  ),
-                  BoardOutputDropdown(
-                    label: '低风',
-                    selectedValue: widget.airCon.channelLowUid,
-                    onChanged: (newValue) {
-                      setState(() {
-                        widget.airCon.channelLowUid = newValue;
-                      });
-                    },
-                  ),
-                  BoardOutputDropdown(
-                    label: '中风',
-                    selectedValue: widget.airCon.channelMidUid,
-                    onChanged: (newValue) {
-                      setState(() {
-                        widget.airCon.channelMidUid = newValue;
-                      });
-                    },
-                  ),
-                  BoardOutputDropdown(
-                    label: '高风',
-                    selectedValue: widget.airCon.channelHighUid,
-                    onChanged: (newValue) {
-                      setState(() {
-                        widget.airCon.channelHighUid = newValue;
-                      });
-                    },
-                  ),
-                  BoardOutputDropdown(
-                    label: widget.airCon.type == ACType.single ? '水阀' : '冷水阀',
-                    selectedValue: widget.airCon.channelWater1Uid,
-                    onChanged: (newValue) {
-                      setState(() {
-                        widget.airCon.channelWater1Uid = newValue;
-                      });
-                    },
-                  ),
-                  if (widget.airCon.type == ACType.double)
-                    BoardOutputDropdown(
-                      label: '热水阀',
-                      selectedValue: widget.airCon.channelWater2Uid,
-                      onChanged: (newValue) {
-                        setState(() {
-                          widget.airCon.channelWater2Uid = newValue;
-                        });
-                      },
-                    ),
+                  // BoardOutputDropdown(
+                  //   label: '电源',
+                  //   selectedValue: widget.airCon.channelPowerUid,
+                  //   onChanged: (newValue) {
+                  //     setState(() {
+                  //       widget.airCon.channelPowerUid = newValue;
+                  //     });
+                  //   },
+                  // ),
+                  // BoardOutputDropdown(
+                  //   label: '低风',
+                  //   selectedValue: widget.airCon.channelLowUid,
+                  //   onChanged: (newValue) {
+                  //     setState(() {
+                  //       widget.airCon.channelLowUid = newValue;
+                  //     });
+                  //   },
+                  // ),
+                  // BoardOutputDropdown(
+                  //   label: '中风',
+                  //   selectedValue: widget.airCon.channelMidUid,
+                  //   onChanged: (newValue) {
+                  //     setState(() {
+                  //       widget.airCon.channelMidUid = newValue;
+                  //     });
+                  //   },
+                  // ),
+                  // BoardOutputDropdown(
+                  //   label: '高风',
+                  //   selectedValue: widget.airCon.channelHighUid,
+                  //   onChanged: (newValue) {
+                  //     setState(() {
+                  //       widget.airCon.channelHighUid = newValue;
+                  //     });
+                  //   },
+                  // ),
+                  // BoardOutputDropdown(
+                  //   label: widget.airCon.type == ACType.single ? '水阀' : '冷水阀',
+                  //   selectedValue: widget.airCon.channelWater1Uid,
+                  //   onChanged: (newValue) {
+                  //     setState(() {
+                  //       widget.airCon.channelWater1Uid = newValue;
+                  //     });
+                  //   },
+                  // ),
+                  // if (widget.airCon.type == ACType.double)
+                  //   BoardOutputDropdown(
+                  //     label: '热水阀',
+                  //     selectedValue: widget.airCon.channelWater2Uid,
+                  //     onChanged: (newValue) {
+                  //       setState(() {
+                  //         widget.airCon.channelWater2Uid = newValue;
+                  //       });
+                  //     },
+                  //   ),
                 ],
               ),
             ] else ...[

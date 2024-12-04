@@ -1,12 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_web_1/commons/common_function.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:provider/provider.dart';
-
-part 'lamp_config_provider.g.dart';
 
 enum LampType { normalLight, dimmableLight }
 
@@ -23,42 +21,56 @@ extension LampTypeExtension on LampType {
   List<String> get operations {
     switch (this) {
       case LampType.normalLight:
-        return ['开', '关'];
+        return ['打开', '关闭', '反转'];
       case LampType.dimmableLight:
-        return ['调光'];  // 调光灯就使用一个操作
+        return ['调光']; // 调光灯就使用一个操作
     }
   }
 }
 
-@JsonSerializable()
-class Lamp {
-  final int uid;
-  String name;
-
-  @JsonKey(fromJson: _lampTypeFromJson, toJson: _lampTypeToJson)
+class Lamp extends IDeviceBase {
   LampType type;
-  int channelPowerUid;
+  BoardOutput output;
 
   Lamp({
-    required this.uid,
-    required this.name,
+    required super.name,
+    required super.uid,
     required this.type,
-    required this.channelPowerUid,
+    required this.output,
   });
 
+  @override
+  List<String> get operations {
+    if (type == LampType.normalLight) {
+      return ['打开', '关闭', '反转'];
+    } else {
+      return ['调光'];
+    }
+  }
 
   // Lamp的正反序列化
-  factory Lamp.fromJson(Map<String, dynamic> json) => _$LampFromJson(json);
-  Map<String, dynamic> toJson() => _$LampToJson(this);
+  factory Lamp.fromJson(Map<String, dynamic> json) {
+    return Lamp(
+      name: json['name'] as String,
+      uid: (json['uid'] as num).toInt(),
+      type: LampType.values[json['type'] as int],
+      output: BoardManager().getOutputByUid(json['outputUid'] as int),
+    );
+  }
 
-  // LampType的正反序列化
-  static LampType _lampTypeFromJson(int index) => LampType.values[index];
-  static int _lampTypeToJson(LampType type) => type.index;
+  @override
+  Map<String, dynamic> toJson() {
+    final parentJson = super.toJson();
+    return {
+      ...parentJson,
+      'type': type.index,
+      'outputUid': output.uid,
+    };
+  }
 }
 
-class LampNotifier extends ChangeNotifier {
-  Map<int, Lamp> _allLamps = {};
-  Map<int, Lamp> get allLamps => _allLamps;
+class LampNotifier extends ChangeNotifier with DeviceNotifierMixin {
+  List<Lamp> get allLamps => DeviceManager().getDevices<Lamp>().toList();
 
   void addLamp(BuildContext context) {
     final allOutputs =
@@ -70,39 +82,13 @@ class LampNotifier extends ChangeNotifier {
     }
 
     final lamp = Lamp(
-      uid: UidManager().generateLampUid(),
+      uid: UidManager().generateDeviceUid(),
       name: '未命名 灯',
       type: LampType.normalLight,
-      channelPowerUid: allOutputs.keys.first,
+      output: allOutputs.values.first,
     );
 
-    _allLamps[lamp.uid] = lamp;
-    notifyListeners();
-  }
-
-  void removeLamp(int key) {
-    _allLamps.remove(key);
-    notifyListeners();
-  }
-
-  void updateWidget() {
-    notifyListeners();
-  }
-
-  void updateLampMap(Map<int, Lamp> newLamps) {
-    _allLamps = newLamps;
-    notifyListeners();
-  }
-
-  void deserializationUpdate(List<Lamp> newLamps) {
-    _allLamps.clear();
-    int newLampUidMax = newLamps.fold(0, (prev, lamp) => max(prev, lamp.uid));
-
-    UidManager().setLampUid(newLampUidMax + 1);
-
-    for (var lamp in newLamps) {
-      _allLamps[lamp.uid] = lamp;
-    }
+    DeviceManager().addDevice(lamp);
     notifyListeners();
   }
 }

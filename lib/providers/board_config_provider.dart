@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart' hide Action;
-import 'package:flutter_web_1/providers/action_config_provider.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:provider/provider.dart';
 
 part 'board_config_provider.g.dart';
 
@@ -82,12 +82,12 @@ class BoardInput {
 
   @JsonKey(fromJson: _inputLevelFromJson, toJson: _inputLevelToJson)
   InputLevel level;
-  int actionGroupUid;
+  // List<IDeviceAtion> actions;
 
   BoardInput({
     required this.channel,
     required this.level,
-    required this.actionGroupUid,
+    // required this.actions,
     required this.hostBoardId,
   });
 
@@ -139,63 +139,40 @@ class BoardConfig {
 
 // 整个板子配置的管理类
 class BoardConfigNotifier extends ChangeNotifier {
+  final BoardManager _boardManager = BoardManager();
+
   // 所有板子
-  List<BoardConfig> _allBoard = [];
-
-  List<BoardConfig> get allBoard => _allBoard;
-
-  // 所有板子里的输出/输入
-  Map<int, BoardOutput> get allOutputs =>
-      Map.fromEntries(_allBoard.expand((board) => board.outputs.entries));
-
-  List<BoardInput> get allInputs =>
-      _allBoard.expand((board) => board.inputs).toList();
+  List<BoardConfig> get allBoard => _boardManager.allBoards;
 
   void addBoard() {
-    _allBoard.add(BoardConfig(id: _allBoard.length));
+    _boardManager.addBoard(BoardConfig(id: _boardManager.allBoards.length));
     notifyListeners();
   }
 
   void removeAt(int index) {
-    _allBoard.removeAt(index);
+    _boardManager.removeBoardAt(index);
     notifyListeners();
   }
+
+  // 所有板子里的输出/输入
+  Map<int, BoardOutput> get allOutputs => _boardManager.allOutputs;
+  List<BoardInput> get allInputs => _boardManager.allInputs;
 
   void addOutputToBoard(int boardId) {
-    final board = _allBoard.firstWhere((board) => board.id == boardId);
-
-    final newOutput = BoardOutput(
-        type: OutputType.relay,
-        channel: 127,
-        name: '',
-        hostBoardId: boardId,
-        uid: UidManager().generateOutputUid());
-    board.outputs[newOutput.uid] = newOutput;
+    _boardManager.addOutputToBoard(boardId);
     notifyListeners();
   }
 
-  void addInputToBoard(BuildContext context, int boardId) {
-    final allActionGroups =
-        Provider.of<ActionConfigNotifier>(context, listen: false)
-            .allActionGroup;
-    if (allActionGroups.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置动作组')));
-      return;
-    }
-    final board = _allBoard.firstWhere((board) => board.id == boardId);
-    board.inputs.add(BoardInput(
-        channel: 127,
-        level: InputLevel.low,
-        actionGroupUid: allActionGroups.values.first.uid,
-        hostBoardId: boardId));
+  void addInputToBoard(int boardId) {
+    _boardManager.addInputToBoard(boardId);
     notifyListeners();
   }
 
   // 更新整个 Map
   void deserializationUpdate(List<BoardConfig> newBoards) {
-    _allBoard.clear();
-    // 找到所有 BoardOutput 中的最大 UID
+    _boardManager.clear();
+
+    // 找到所有 BoardConfig的所有BoardOutput 中的最大 UID
     int newOutputUidMax = newBoards.fold(0, (prev, board) {
       return max(
         prev,
@@ -203,10 +180,11 @@ class BoardConfigNotifier extends ChangeNotifier {
             .fold(0, (boardPrev, output) => max(boardPrev, output.uid)),
       );
     });
-
     UidManager().setOutputUid(newOutputUidMax + 1);
 
-    _allBoard.addAll(newBoards);
+    for (var board in newBoards) {
+      _boardManager.addBoard(board);
+    }
     notifyListeners();
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class LampConfigPage extends StatefulWidget {
@@ -32,36 +32,16 @@ class LampConfigPageState extends State<LampConfigPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                ReorderableListView.builder(
+                ListView.builder(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  onReorder: (oldIndex, newIndex) {
-                    if (newIndex > oldIndex) newIndex -= 1;
-
-                    final keys = lampConfigNotifier.allLamps.keys.toList();
-                    final values = lampConfigNotifier.allLamps.values.toList();
-
-                    final key = keys.removeAt(oldIndex);
-                    final value = values.removeAt(oldIndex);
-
-                    keys.insert(newIndex, key);
-                    values.insert(newIndex, value);
-
-                    lampConfigNotifier.updateLampMap(Map.fromIterables(keys, values));
-                  },
                   itemCount: lampConfigNotifier.allLamps.length,
                   itemBuilder: (context, index) {
-                    final lamp =
-                        lampConfigNotifier.allLamps.values.toList()[index];
-                    final key =
-                        lampConfigNotifier.allLamps.keys.toList()[index];
-
+                    final lamp = lampConfigNotifier.allLamps[index];
                     return LampWidget(
-                      key: ValueKey(key),
                       lamp: lamp,
                       onDelete: () {
-                        lampConfigNotifier.removeLamp(key);
+                        lampConfigNotifier.removeDevice(lamp.uid);
                       },
                       index: index,
                     );
@@ -160,15 +140,17 @@ class _LampWidgetState extends State<LampWidget> {
                 }),
             // 继电器设定
             BoardOutputDropdown(
-                label: widget.lamp.type == LampType.dimmableLight ? '调光器' : '电源',
-                selectedValue: widget.lamp.channelPowerUid,
+                label:
+                    widget.lamp.type == LampType.dimmableLight ? '调光器' : '电源',
+                selectedOutput: widget.lamp.output,
                 onChanged: (newValue) {
                   setState(() {
-                    widget.lamp.channelPowerUid = newValue;
+                    widget.lamp.output = newValue;
                   });
                 }),
             Spacer(),
-            DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete()),
+            DeleteBtnDense(
+                message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),
             ReorderableDragStartListener(
                 index: widget.index, child: Icon(Icons.drag_handle))

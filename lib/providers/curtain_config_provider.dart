@@ -1,40 +1,52 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_web_1/commons/common_function.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:provider/provider.dart';
 
-part 'curtain_config_provider.g.dart';
-
-@JsonSerializable()
-class Curtain {
-  final int uid;
-  String name;
-  int channelOpenUid;
-  int channelCloseUid;
+class Curtain extends IDeviceBase {
+  BoardOutput outputOpen;
+  BoardOutput outputClose;
   int runDuration;
 
   Curtain({
-    required this.uid,
-    required this.name,
-    required this.channelOpenUid,
-    required this.channelCloseUid,
-    required this.runDuration
+    required super.name,
+    required super.uid,
+    required this.outputOpen,
+    required this.outputClose,
+    required this.runDuration,
   });
 
-  static List<String> get operations {
-    return ["开", "关", "反转"];
+  @override
+  List<String> get operations => ["打开", "关闭", "反转"];
+
+  factory Curtain.fromJson(Map<String, dynamic> json) {
+    return Curtain(
+      name: json['name'] as String,
+      uid: (json['uid'] as num).toInt(),
+      outputOpen: BoardManager().getOutputByUid(json['outputOpenUid'] as int),
+      outputClose: BoardManager().getOutputByUid(json['outputCloseUid'] as int),
+      runDuration: json['runDuration'] as int,
+    );
   }
 
-  factory Curtain.fromJson(Map<String, dynamic> json) => _$CurtainFromJson(json);
-  Map<String, dynamic> toJson() => _$CurtainToJson(this);
+  @override
+  Map<String, dynamic> toJson() {
+    final parentJson = super.toJson();
+    return {
+      ...parentJson,
+      'outputOpenUid': outputOpen.uid,
+      'outputCloseUid': outputClose.uid,
+      'runDuration': runDuration,
+    };
+  }
 }
 
-class CurtainNotifier extends ChangeNotifier {
-  Map<int, Curtain> _allCurtains = {};
-  Map<int, Curtain> get allCurtains => _allCurtains;
+class CurtainNotifier extends ChangeNotifier with DeviceNotifierMixin {
+  List<Curtain> get allCurtains =>
+      DeviceManager().getDevices<Curtain>().toList();
 
   void addCurtain(BuildContext context) {
     final allOutputs =
@@ -46,40 +58,14 @@ class CurtainNotifier extends ChangeNotifier {
     }
 
     final curtain = Curtain(
-      uid: UidManager().generateCurtainUid(),
+      uid: UidManager().generateDeviceUid(),
       name: '未命名 窗帘',
-      channelOpenUid: allOutputs.keys.first,
-      channelCloseUid: allOutputs.keys.first,
+      outputOpen: allOutputs.values.first,
+      outputClose: allOutputs.values.first,
       runDuration: 20,
     );
 
-    _allCurtains[curtain.uid] = curtain;
-    notifyListeners();
-  }
-
-  void removeCurtain(int key) {
-    _allCurtains.remove(key);
-    notifyListeners();
-  }
-
-  void updateWidget() {
-    notifyListeners();
-  }
-
-  void updateCurtainMap(Map<int, Curtain> newCurtains) {
-    _allCurtains = newCurtains;
-    notifyListeners();
-  }
-
-  void deserializationUpdate(List<Curtain> newCurtains) {
-    _allCurtains.clear();
-    int newCurtainUidMax = newCurtains.fold(0, (prev, curtain) => max(prev, curtain.uid));
-
-    UidManager().setCurtainUid(newCurtainUidMax + 1);
-
-    for (var curtain in newCurtains) {
-      _allCurtains[curtain.uid] = curtain;
-    }
+    DeviceManager().addDevice(curtain);
     notifyListeners();
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class RS485ConfigPage extends StatefulWidget {

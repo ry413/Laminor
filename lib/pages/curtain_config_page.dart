@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:flutter_web_1/providers/curtain_config_provider.dart';
-import 'package:flutter_web_1/widgets/common_widgets.dart';
 import 'package:provider/provider.dart';
 
 class CurtainConfigPage extends StatefulWidget {
@@ -32,39 +32,16 @@ class CurtainConfigPageState extends State<CurtainConfigPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                ReorderableListView.builder(
+                ListView.builder(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  onReorder: (oldIndex, newIndex) {
-                    if (newIndex > oldIndex) newIndex -= 1;
-
-                    final keys =
-                        curtainConfigNotifier.allCurtains.keys.toList();
-                    final values =
-                        curtainConfigNotifier.allCurtains.values.toList();
-
-                    final key = keys.removeAt(oldIndex);
-                    final value = values.removeAt(oldIndex);
-
-                    keys.insert(newIndex, key);
-                    values.insert(newIndex, value);
-
-                    curtainConfigNotifier
-                        .updateCurtainMap(Map.fromIterables(keys, values));
-                  },
                   itemCount: curtainConfigNotifier.allCurtains.length,
                   itemBuilder: (context, index) {
-                    final curtain = curtainConfigNotifier.allCurtains.values
-                        .toList()[index];
-                    final key =
-                        curtainConfigNotifier.allCurtains.keys.toList()[index];
-
+                    final curtain = curtainConfigNotifier.allCurtains[index];
                     return CurtainWidget(
-                      key: ValueKey(key),
                       curtain: curtain,
                       onDelete: () {
-                        curtainConfigNotifier.removeCurtain(key);
+                        curtainConfigNotifier.removeDevice(curtain.uid);
                       },
                       index: index,
                     );
@@ -159,19 +136,19 @@ class _CurtainWidgetState extends State<CurtainWidget> {
                 // 继电器设定
                 BoardOutputDropdown(
                     label: '开: ',
-                    selectedValue: widget.curtain.channelOpenUid,
+                    selectedOutput: widget.curtain.outputOpen,
                     onChanged: (newValue) {
                       setState(() {
-                        widget.curtain.channelOpenUid = newValue;
+                        widget.curtain.outputOpen = newValue;
                       });
                     }),
                 // 继电器设定
                 BoardOutputDropdown(
                     label: '关: ',
-                    selectedValue: widget.curtain.channelCloseUid,
+                    selectedOutput: widget.curtain.outputClose,
                     onChanged: (newValue) {
                       setState(() {
-                        widget.curtain.channelCloseUid = newValue;
+                        widget.curtain.outputClose = newValue;
                       });
                     }),
               ],
@@ -183,7 +160,7 @@ class _CurtainWidgetState extends State<CurtainWidget> {
                   widget.curtain.runDuration = value;
                 }),
             SizedBox(width: 20),
-            DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete()),
+            DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),
             ReorderableDragStartListener(
                 index: widget.index, child: Icon(Icons.drag_handle))
