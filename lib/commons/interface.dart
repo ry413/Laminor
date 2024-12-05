@@ -1,3 +1,35 @@
+import 'package:flutter_web_1/commons/managers.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+part 'interface.g.dart';
+
+// 最原子级的操作, 天了
+// 把它叫作Action, 就是说一个Action里含有的, 是target和operation
+
+@JsonSerializable()
+class AtomicAction {
+  int deviceUid; // 此操作的目标设备的uid
+  String operation; // 操作, 所属于目标设备的operations之中
+  int parameter;
+  
+  // 普通构造函数，使用外部参数
+  AtomicAction({
+    required this.deviceUid,
+    required this.operation,
+    required this.parameter,
+  });
+
+  // 默认构造函数，使用默认值
+  AtomicAction.defaultAction()
+      : deviceUid = DeviceManager().allDevices.values.first.uid,
+        operation = DeviceManager().allDevices.values.first.operations.first,
+        parameter = 0;
+
+  factory AtomicAction.fromJson(Map<String, dynamic> json) =>
+      _$AtomicActionFromJson(json);
+  Map<String, dynamic> toJson() => _$AtomicActionToJson(this);
+}
+
 // 继承于IDeviceAction的类, 如灯, 窗帘什么的, 会被面板控制的设备
 // 表示这些设备关联于哪个面板的哪个按钮
 class AssociatedButton {
@@ -41,4 +73,12 @@ abstract class IDeviceBase {
           .toList(),
     };
   }
+}
+
+// 独特的心跳状态
+class HeartbeatState extends IDeviceBase {
+  HeartbeatState({required super.name, required super.uid});
+
+  @override
+  List<String> get operations => ['睡眠'];
 }

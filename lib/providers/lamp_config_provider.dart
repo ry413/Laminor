@@ -60,9 +60,8 @@ class Lamp extends IDeviceBase {
 
   @override
   Map<String, dynamic> toJson() {
-    final parentJson = super.toJson();
     return {
-      ...parentJson,
+      ...super.toJson(),
       'type': type.index,
       'outputUid': output.uid,
     };
@@ -77,7 +76,7 @@ class LampNotifier extends ChangeNotifier with DeviceNotifierMixin {
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
     if (allOutputs.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置输出')));
+          .showSnackBar(SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
       return;
     }
 

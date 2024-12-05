@@ -243,7 +243,7 @@ class _PanelWidgetState extends State<PanelWidget> {
   // 构建操作目标设备的下拉菜单
   CustomDropdown<IDeviceBase> buildTargetDevice(int index, int i) {
     final deviceUid = widget
-        .panel.buttons[index].panelActions[i].atomicActions.first.deviceUid;
+        .panel.buttons[index].panelActionGroups[i].atomicActions.first.deviceUid;
     final allDevices = DeviceManager().allDevices;
 
     final selectedDevice = allDevices[deviceUid] ?? allDevices.values.first;
@@ -254,10 +254,10 @@ class _PanelWidgetState extends State<PanelWidget> {
       itemLabel: (device) => device.name,
       onChanged: (device) {
         setState(() {
-          widget.panel.buttons[index].panelActions[i].atomicActions.first
+          widget.panel.buttons[index].panelActionGroups[i].atomicActions.first
               .deviceUid = device!.uid;
           // 在更改目标设备时, 要同时重置选择的操作
-          widget.panel.buttons[index].panelActions[i].atomicActions.first
+          widget.panel.buttons[index].panelActionGroups[i].atomicActions.first
               .operation = device.operations.first;
         });
       },
@@ -283,7 +283,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
   @override
   Widget build(BuildContext context) {
     final currentActionGroup =
-        widget.button.panelActions[widget.button.currentActionGroupIndex];
+        widget.button.panelActionGroups[widget.button.currentActionGroupIndex];
 
     return Container(
         margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -331,7 +331,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 IconButton(
                   icon: Icon(Icons.arrow_forward, size: 20),
                   onPressed: widget.button.currentActionGroupIndex <
-                          widget.button.panelActions.length - 1
+                          widget.button.panelActionGroups.length - 1
                       ? () {
                           setState(() {
                             widget.button.currentActionGroupIndex++;
@@ -348,34 +348,16 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                       size: 24,
                     ),
                     onPressed: () {
-                      if (DeviceManager().allDevices.isEmpty) {
+                      if (DeviceManager().allDevices.values.isEmpty) {
                         ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text('请先添加设备')));
+                            .showSnackBar(SnackBar(content: Text('请先添加设备'),duration: Duration(seconds: 1)));
                         return;
                       }
                       setState(() {
-                        if (widget.button.panelActions.length < 4) {
-                          widget.button.panelActions.add(PanelButtonAction(
-                              atomicActions: [
-                                AtomicAction(
-                                    deviceUid: DeviceManager()
-                                        .allDevices
-                                        .values
-                                        .first
-                                        .uid,
-                                    operation: DeviceManager()
-                                        .allDevices
-                                        .values
-                                        .first
-                                        .operations
-                                        .first,
-                                    parameter: 0)
-                              ],
-                              pressedPolitAction: ButtonPolitAction.ignore,
-                              pressedOtherPolitAction:
-                                  ButtonOtherPolitAction.ignore));
+                        if (widget.button.panelActionGroups.length < 4) {
+                          widget.button.panelActionGroups.add(PanelButtonActionGroup.defaultActionGroup());
                           widget.button.currentActionGroupIndex =
-                              widget.button.panelActions.length - 1;
+                              widget.button.panelActionGroups.length - 1;
                         }
                       });
                     },
@@ -390,18 +372,18 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                       size: 24,
                       color: Colors.red, // 设置删除按钮为红色，突出显示
                     ),
-                    onPressed: widget.button.panelActions.length > 1
+                    onPressed: widget.button.panelActionGroups.length > 1
                         ? () {
                             setState(() {
                               // 删除当前动作组
-                              widget.button.panelActions.removeAt(
+                              widget.button.panelActionGroups.removeAt(
                                   widget.button.currentActionGroupIndex);
 
                               // 调整 currentActionGroupIndex
                               if (widget.button.currentActionGroupIndex >=
-                                  widget.button.panelActions.length) {
+                                  widget.button.panelActionGroups.length) {
                                 widget.button.currentActionGroupIndex =
-                                    widget.button.panelActions.length - 1;
+                                    widget.button.panelActionGroups.length - 1;
                               }
                             });
                           }
@@ -415,30 +397,71 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                   (i) => buildAtomicActionRow(i)),
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                // 按钮指示灯行为下拉菜单
+                Row(
+                  children: [
+                    Text('执行完成后将本指示灯'),
+                    // SectionTitle(title: '执行完成后将本指示灯'),
+                    CustomDropdown<ButtonPolitAction>(
+                      selectedValue: widget
+                          .button
+                          .panelActionGroups[widget.button.currentActionGroupIndex]
+                          .pressedPolitAction,
+                      items: ButtonPolitAction.values,
+                      itemLabel: (item) => item.displayName,
+                      onChanged: (value) {
+                        setState(() {
+                          widget
+                              .button
+                              .panelActionGroups[
+                                  widget.button.currentActionGroupIndex]
+                              .pressedPolitAction = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(width: 8),
+                // 同面板其他指示灯行为下拉菜单
+                Row(
+                  children: [
+                    Text('将同面板其他指示灯'),
+                    // SectionTitle(title: '将同面板其他指示灯'),
+                    CustomDropdown<ButtonOtherPolitAction>(
+                      selectedValue: widget
+                          .button
+                          .panelActionGroups[widget.button.currentActionGroupIndex]
+                          .pressedOtherPolitAction,
+                      items: ButtonOtherPolitAction.values,
+                      itemLabel: (item) => item.displayName,
+                      onChanged: (value) {
+                        setState(() {
+                          widget
+                              .button
+                              .panelActionGroups[
+                                  widget.button.currentActionGroupIndex]
+                              .pressedOtherPolitAction = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                Spacer(),
                 Tooltip(
                   message: '添加新的动作',
                   child: IconButton(
-                    icon: Icon(Icons.add),
+                    icon: Icon(Icons.add_circle),
                     onPressed: () {
                       if (DeviceManager().allDevices.isEmpty) {
                         ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text('请先添加设备')));
+                            .showSnackBar(SnackBar(content: Text('请先添加设备'), duration: Duration(seconds: 1)));
                         return;
                       }
                       setState(() {
                         currentActionGroup.atomicActions.add(
-                          AtomicAction(
-                              deviceUid:
-                                  DeviceManager().allDevices.values.first.uid,
-                              operation: DeviceManager()
-                                  .allDevices
-                                  .values
-                                  .first
-                                  .operations
-                                  .first,
-                              parameter: 0),
+                          AtomicAction.defaultAction(),
                         );
                       });
                     },
@@ -460,6 +483,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
             buildTargetDevice(index),
           ],
         ),
+        SizedBox(width: 20),
         // 展示此Device拥有的动作（操作）
         Row(
           children: [
@@ -467,62 +491,15 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
             buildDeviceAction(index),
           ],
         ),
-
         Spacer(),
-        // 按钮指示灯行为下拉菜单
-        Row(
-          children: [
-            SectionTitle(title: '将本指示灯'),
-            CustomDropdown<ButtonPolitAction>(
-              selectedValue: widget
-                  .button
-                  .panelActions[widget.button.currentActionGroupIndex]
-                  .pressedPolitAction,
-              items: ButtonPolitAction.values,
-              itemLabel: (item) => item.displayName,
-              onChanged: (value) {
-                setState(() {
-                  widget
-                      .button
-                      .panelActions[widget.button.currentActionGroupIndex]
-                      .pressedPolitAction = value!;
-                });
-              },
-            ),
-          ],
-        ),
-        SizedBox(width: 8),
-        // 同面板其他指示灯行为下拉菜单
-        Row(
-          children: [
-            SectionTitle(title: '将其他指示灯'),
-            CustomDropdown<ButtonOtherPolitAction>(
-              selectedValue: widget
-                  .button
-                  .panelActions[widget.button.currentActionGroupIndex]
-                  .pressedOtherPolitAction,
-              items: ButtonOtherPolitAction.values,
-              itemLabel: (item) => item.displayName,
-              onChanged: (value) {
-                setState(() {
-                  widget
-                      .button
-                      .panelActions[widget.button.currentActionGroupIndex]
-                      .pressedOtherPolitAction = value!;
-                });
-              },
-            ),
-          ],
-        ),
-        // Spacer(),
         // 删除动作按钮
         DeleteBtnDense(
-            message: '删除动作',
+            message: '',
             onDelete: () {
               setState(() {
                 widget
                     .button
-                    .panelActions[widget.button.currentActionGroupIndex]
+                    .panelActionGroups[widget.button.currentActionGroupIndex]
                     .atomicActions
                     .removeAt(index);
               });
@@ -537,7 +514,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
   Widget buildTargetDevice(int index) {
     final deviceUid = widget
         .button
-        .panelActions[widget.button.currentActionGroupIndex]
+        .panelActionGroups[widget.button.currentActionGroupIndex]
         .atomicActions[index]
         .deviceUid;
     final allDevices = DeviceManager().allDevices;
@@ -550,10 +527,10 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
       itemLabel: (device) => device.name,
       onChanged: (device) {
         setState(() {
-          widget.button.panelActions[widget.button.currentActionGroupIndex]
+          widget.button.panelActionGroups[widget.button.currentActionGroupIndex]
               .atomicActions[index].deviceUid = device!.uid;
           // 重置操作
-          widget.button.panelActions[widget.button.currentActionGroupIndex]
+          widget.button.panelActionGroups[widget.button.currentActionGroupIndex]
               .atomicActions[index].operation = device.operations.first;
         });
       },
@@ -564,7 +541,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
   Widget buildDeviceAction(int index) {
     final atomicAction = widget
         .button
-        .panelActions[widget.button.currentActionGroupIndex]
+        .panelActionGroups[widget.button.currentActionGroupIndex]
         .atomicActions[index];
 
     final device = DeviceManager().allDevices[atomicAction.deviceUid];

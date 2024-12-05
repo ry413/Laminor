@@ -43,7 +43,6 @@ class LampConfigPageState extends State<LampConfigPage> {
                       onDelete: () {
                         lampConfigNotifier.removeDevice(lamp.uid);
                       },
-                      index: index,
                     );
                   },
                 ),
@@ -71,13 +70,11 @@ class LampConfigPageState extends State<LampConfigPage> {
 class LampWidget extends StatefulWidget {
   final Lamp lamp;
   final Function onDelete;
-  final int index;
 
   const LampWidget(
       {super.key,
       required this.lamp,
-      required this.onDelete,
-      required this.index});
+      required this.onDelete});
 
   @override
   State<LampWidget> createState() => _LampWidgetState();
@@ -152,8 +149,6 @@ class _LampWidgetState extends State<LampWidget> {
             DeleteBtnDense(
                 message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),
-            ReorderableDragStartListener(
-                index: widget.index, child: Icon(Icons.drag_handle))
           ],
         ),
       ),

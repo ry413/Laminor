@@ -74,6 +74,29 @@ class BoardOutput {
   static int _outputTypeToJson(OutputType type) => type.index;
 }
 
+// 板子输入的动作组类
+class InputActionGroup {
+  List<AtomicAction> atomicActions;
+
+  InputActionGroup({required this.atomicActions});
+  InputActionGroup.defaultActionGroup()
+      : atomicActions = [AtomicAction.defaultAction()];
+
+  factory InputActionGroup.fromJson(Map<String, dynamic> json) {
+    return InputActionGroup(
+      atomicActions: (json['atomicActions'] as List<dynamic>)
+          .map((e) => AtomicAction.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'atomicActions': atomicActions.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
 // 板子上的一个输入
 @JsonSerializable()
 class BoardInput {
@@ -82,14 +105,18 @@ class BoardInput {
 
   @JsonKey(fromJson: _inputLevelFromJson, toJson: _inputLevelToJson)
   InputLevel level;
-  // List<IDeviceAtion> actions;
 
-  BoardInput({
-    required this.channel,
-    required this.level,
-    // required this.actions,
-    required this.hostBoardId,
-  });
+  List<InputActionGroup> actionGroups; // 添加动作组列表
+
+  @JsonKey(includeToJson: false, includeFromJson: false)
+  int currentActionGroupIndex; // 当前动作组索引
+
+  BoardInput(
+      {required this.channel,
+      required this.level,
+      required this.hostBoardId,
+      required this.actionGroups,
+      this.currentActionGroupIndex = 0});
 
   // BoardInput的正反序列化
   factory BoardInput.fromJson(Map<String, dynamic> json) =>

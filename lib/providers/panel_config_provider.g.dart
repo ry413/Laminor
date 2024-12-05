@@ -6,19 +6,6 @@ part of 'panel_config_provider.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-AtomicAction _$AtomicActionFromJson(Map<String, dynamic> json) => AtomicAction(
-      deviceUid: (json['deviceUid'] as num).toInt(),
-      operation: json['operation'] as String,
-      parameter: json['parameter'],
-    );
-
-Map<String, dynamic> _$AtomicActionToJson(AtomicAction instance) =>
-    <String, dynamic>{
-      'deviceUid': instance.deviceUid,
-      'operation': instance.operation,
-      'parameter': instance.parameter,
-    };
-
 Panel _$PanelFromJson(Map<String, dynamic> json) => Panel(
       id: (json['id'] as num).toInt(),
       type: Panel._panelTypeFromJson((json['type'] as num).toInt()),

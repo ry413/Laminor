@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
@@ -29,13 +31,16 @@ class BoardInputPageState extends State<BoardInputPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ListView(children: [
           ListView.builder(
-            physics: NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: boardNotifier.allBoard.length,
-            itemBuilder: (context, index) => BoardInputWidget(
-              board: boardNotifier.allBoard[index],
-            ),
-          )
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: boardNotifier.allBoard.length,
+              itemBuilder: (context, index) {
+                return BoardInputWidget(
+                    board: boardNotifier.allBoard[index],
+                    onDelete: () {
+                      boardNotifier.allBoard.removeAt(index);
+                    });
+              })
         ]),
       ),
     );
@@ -45,10 +50,9 @@ class BoardInputPageState extends State<BoardInputPage> {
 // 单块板子的所有输入 的部件
 class BoardInputWidget extends StatefulWidget {
   final BoardConfig board;
+  final Function onDelete;
 
-  const BoardInputWidget({
-    required this.board,
-  });
+  const BoardInputWidget({required this.board, required this.onDelete});
 
   @override
   State<BoardInputWidget> createState() => _BoardInputWidgetState();
@@ -56,7 +60,6 @@ class BoardInputWidget extends StatefulWidget {
 
 class _BoardInputWidgetState extends State<BoardInputWidget> {
   List<TextEditingController> _inputChannelControllers = [];
-  // List<TextEditingController> _inputNameControllers = [];
 
   @override
   void initState() {
@@ -65,8 +68,6 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
         widget.board.inputs.length,
         (i) => TextEditingController(
             text: widget.board.inputs[i].channel.toString()));
-    // _inputNameControllers = List.generate(widget.board.inputs.length,
-    //     (i) => TextEditingController(text: widget.board.inputs[i].name));
   }
 
   @override
@@ -74,9 +75,6 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
     for (var controller in _inputChannelControllers) {
       controller.dispose();
     }
-    // for (var controller in _inputNameControllers) {
-    //   controller.dispose();
-    // }
     super.dispose();
   }
 
@@ -100,60 +98,68 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: SectionTitle(
-                        title: '输入通道',
+              // 添加通道按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Tooltip(
+                    message: '添加通道',
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.add_circle,
+                        size: 24,
                       ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: SectionTitle(
-                        title: '输入电平',
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Row(
-                        children: [
-                          SectionTitle(
-                            title: '执行动作',
-                          ),
-                          Tooltip(
-                            message: '添加通道',
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.add_circle,
-                                size: 24,
-                              ),
-                              onPressed: () {
-                                boardNotifier.addInputToBoard(widget.board.id);
-                              },
+                      onPressed: () {
+                        if (DeviceManager().allDevices.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('请先添加设备'),
+                                duration: Duration(seconds: 1)),
+                          );
+                          return;
+                        }
+                        setState(() {
+                          widget.board.inputs.add(
+                            BoardInput(
+                              channel: 1,
+                              level: InputLevel.high,
+                              hostBoardId: widget.board.id,
+                              actionGroups: [
+                                InputActionGroup(
+                                  atomicActions: [],
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
+                          );
+                        });
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const Divider(height: 1, thickness: 1),
-              for (int i = 0; i < widget.board.inputs.length; i++) ...[
-                BoardInputUnit(
-                    input: widget.board.inputs[i],
-                    onDelete: () {
-                      setState(() {
-                        widget.board.removeInputAt(i);
-                      });
-                    }),
-                if (i < widget.board.inputs.length - 1)
-                  const Divider(height: 1, thickness: 1),
-              ],
+              // 通道列表
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: widget.board.inputs.length,
+                itemBuilder: (context, index) {
+                  return Column(
+                    children: [
+                      BoardInputUnit(
+                        input: widget.board.inputs[index],
+                        onDelete: () {
+                          setState(() {
+                            widget.board.inputs.removeAt(index);
+                          });
+                        },
+                      ),
+                      if (index < widget.board.inputs.length - 1)
+                        const Divider(height: 1, thickness: 1),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -166,12 +172,10 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
 class BoardInputUnit extends StatefulWidget {
   final BoardInput input;
   final Function onDelete;
-  // final int index;
 
   const BoardInputUnit({
     required this.input,
     required this.onDelete,
-    // required this.index,
   });
 
   @override
@@ -179,7 +183,7 @@ class BoardInputUnit extends StatefulWidget {
 }
 
 class _BoardInputUnitState extends State<BoardInputUnit> {
-  TextEditingController _channelController = TextEditingController();
+  late TextEditingController _channelController;
 
   @override
   void initState() {
@@ -205,46 +209,55 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
 
   @override
   Widget build(BuildContext context) {
+    final currentActionGroup =
+        widget.input.actionGroups[widget.input.currentActionGroupIndex];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8.0),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 208, 215, 223), // 背景色
+        border: Border.all(color: Color.fromRGBO(149, 154, 160, 1)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 输入通道
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: EdgeInsets.only(right: 40),
-              child: TextField(
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(4.0),
-                      borderSide: BorderSide(width: 1, color: Colors.brown),
+          // 通道信息和控制按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              // 通道号输入框
+              SectionTitle(title: '通道'),
+              SizedBox(width: 8),
+              IntrinsicWidth(
+                child: TextField(
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4.0),
+                        borderSide: BorderSide(width: 1, color: Colors.brown),
+                      ),
                     ),
-                  ),
-                  controller: _channelController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: (value) {
-                    setState(() {
-                      if (value.isEmpty) {
-                        widget.input.channel = 127;
-                      } else {
-                        widget.input.channel = int.parse(value);
-                      }
-                    });
-                  }),
-            ),
-          ),
-          // 输入电平
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: EdgeInsets.only(right: 30),
-              child: CustomDropdown(
+                    controller: _channelController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (value) {
+                      setState(() {
+                        if (value.isEmpty) {
+                          widget.input.channel = 127;
+                        } else {
+                          widget.input.channel = int.parse(value);
+                        }
+                      });
+                    }),
+              ),
+              SizedBox(width: 8),
+              SectionTitle(title: '输入电平'),
+              // 输入电平下拉菜单
+              CustomDropdown<InputLevel>(
                 selectedValue: widget.input.level,
                 items: InputLevel.values,
                 itemLabel: (item) => item.displayName,
@@ -254,33 +267,202 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   });
                 },
               ),
+              Spacer(),
+              // 左翻页按钮
+              IconButton(
+                icon: Icon(Icons.arrow_back, size: 20),
+                onPressed: widget.input.currentActionGroupIndex > 0
+                    ? () {
+                        setState(() {
+                          widget.input.currentActionGroupIndex--;
+                        });
+                      }
+                    : null, // 禁用当已经是第一个动作组
+              ),
+              // 动作组名称
+              Text(
+                '动作组 ${widget.input.currentActionGroupIndex + 1}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              // 右翻页按钮
+              IconButton(
+                icon: Icon(Icons.arrow_forward, size: 20),
+                onPressed: widget.input.currentActionGroupIndex <
+                        widget.input.actionGroups.length - 1
+                    ? () {
+                        setState(() {
+                          widget.input.currentActionGroupIndex++;
+                        });
+                      }
+                    : null, // 禁用当已经是最后一个动作组
+              ),
+              // 添加动作组按钮
+              Tooltip(
+                message: '添加动作组',
+                child: IconButton(
+                  icon: Icon(
+                    Icons.add_circle,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                  setState(() {
+                    if (widget.input.actionGroups.length < 4) {
+                      widget.input.actionGroups.add(
+                        InputActionGroup(
+                          atomicActions: [
+                            AtomicAction.defaultAction(),
+                          ],
+                        ),
+                      );
+                      widget.input.currentActionGroupIndex =
+                          widget.input.actionGroups.length - 1;
+                    }
+                  });
+                },
+                ),
+              ),
+              // 删除动作组按钮
+              Tooltip(
+                message: '删除当前动作组',
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    size: 24,
+                    color: Colors.red, // 设置删除按钮为红色，突出显示
+                  ),
+                  onPressed: widget.input.actionGroups.length > 1
+                      ? () {
+                          setState(() {
+                            // 删除当前动作组
+                            widget.input.actionGroups
+                                .removeAt(widget.input.currentActionGroupIndex);
+
+                            // 更新 currentActionGroupIndex
+                            if (widget.input.currentActionGroupIndex >=
+                                widget.input.actionGroups.length) {
+                              widget.input.currentActionGroupIndex =
+                                  widget.input.actionGroups.length - 1;
+                            }
+                          });
+                        }
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          // 当前动作组的动作列表
+          Column(
+            children: List.generate(
+              currentActionGroup.atomicActions.length,
+              (index) => buildAtomicActionRow(index),
             ),
           ),
-          // 执行动作
-          // Expanded(
-          //     flex: 2,
-          //     child: Container(
-          //       padding: EdgeInsets.only(right: 30),
-          //       child: Row(
-          //         children: [
-          //           CustomDropdown<ActionGroup>(
-          //               selectedValue:
-          //                   allActionGroup[widget.input.actionGroupUid] ??
-          //                       allActionGroup.values.first,
-          //               items: allActionGroup.values.toList(),
-          //               itemLabel: (actionGroup) => actionGroup.name,
-          //               onChanged: (actionGroup) {
-          //                 setState(() {
-          //                   widget.input.actionGroupUid = actionGroup!.uid;
-          //                 });
-          //               }),
-          //           Spacer(),
-          //           DeleteBtnDense(message: '删除通道', onDelete: widget.onDelete)
-          //         ],
-          //       ),
-          //     )),
+          // 添加新的动作到当前动作组
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Tooltip(
+                message: '添加新的动作',
+                child: IconButton(
+                  icon: Icon(Icons.add_circle),
+                  onPressed: () {
+                    if (DeviceManager().allDevices.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('请先添加设备')),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      currentActionGroup.atomicActions.add(
+                        AtomicAction.defaultAction(),
+                      );
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  // 构建原子动作行
+  Widget buildAtomicActionRow(int index) {
+    return Row(
+      children: [
+        // 目标设备下拉菜单
+        Expanded(
+          flex: 2,
+          child: buildTargetDevice(index),
+        ),
+        SizedBox(width: 10),
+        // 设备操作下拉菜单
+        Expanded(
+          flex: 2,
+          child: buildDeviceOperation(index),
+        ),
+        // 删除动作按钮
+        DeleteBtnDense(
+            message: '',
+            onDelete: () {
+              setState(() {
+                widget.input.actionGroups[widget.input.currentActionGroupIndex]
+                    .atomicActions
+                    .removeAt(index);
+              });
+            },
+            size: 20)
+      ],
+    );
+  }
+
+  // 构建目标设备下拉菜单
+  Widget buildTargetDevice(int index) {
+    final atomicAction = widget
+        .input
+        .actionGroups[widget.input.currentActionGroupIndex]
+        .atomicActions[index];
+
+    final deviceUid = atomicAction.deviceUid;
+    final allDevices = DeviceManager().allDevices;
+    final selectedDevice = allDevices[deviceUid] ?? allDevices.values.first;
+
+    return CustomDropdown<IDeviceBase>(
+      selectedValue: selectedDevice,
+      items: allDevices.values.toList(),
+      itemLabel: (device) => device.name,
+      onChanged: (device) {
+        setState(() {
+          atomicAction.deviceUid = device!.uid;
+          // 重置操作
+          atomicAction.operation = device.operations.first;
+        });
+      },
+    );
+  }
+
+  // 构建设备操作下拉菜单
+  Widget buildDeviceOperation(int index) {
+    final atomicAction = widget
+        .input
+        .actionGroups[widget.input.currentActionGroupIndex]
+        .atomicActions[index];
+
+    final deviceUid = atomicAction.deviceUid;
+    final device = DeviceManager().allDevices[deviceUid];
+
+    return device != null
+        ? CustomDropdown<String>(
+            selectedValue: atomicAction.operation,
+            items: device.operations,
+            itemLabel: (operation) => operation,
+            onChanged: (value) {
+              setState(() {
+                atomicAction.operation = value!;
+              });
+            },
+          )
+        : SizedBox.shrink();
   }
 }

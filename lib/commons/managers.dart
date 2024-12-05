@@ -1,6 +1,5 @@
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
-import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 
 class BoardManager {
@@ -44,53 +43,20 @@ class BoardManager {
   }
 
   void addInputToBoard(int boardId) {
-    // final allActionGroups =
-    //     Provider.of<ActionConfigNotifier>(context, listen: false)
-    //         .allActionGroup;
-    // if (allActionGroups.isEmpty) {
-    //   ScaffoldMessenger.of(context)
-    //       .showSnackBar(SnackBar(content: Text('请先配置动作组')));
-    //   return;
-    // }
-    // final board = _allBoard.firstWhere((board) => board.id == boardId);
-    // board.inputs.add(BoardInput(
-    //     channel: 127,
-    //     level: InputLevel.low,
-    //     actionGroupUid: allActionGroups.values.first.uid,
-    //     hostBoardId: boardId));
-    // notifyListeners();
+    final board = _allBoards.firstWhere((board) => board.id == boardId);
+
+    final newInput = BoardInput(
+      channel: 127,
+      level: InputLevel.low,
+      hostBoardId: boardId,
+      actionGroups: [InputActionGroup.defaultActionGroup()],
+    );
+    board.inputs.add(newInput);
   }
 
   List<BoardInput> get allInputs =>
       _allBoards.expand((board) => board.inputs).toList();
 }
-
-// class LampManager {
-//   static final LampManager _instance = LampManager._internal();
-//   factory LampManager() => _instance;
-
-//   LampManager._internal();
-
-//   final Map<int, Lamp> _allLamps = {};
-//   Map<int, Lamp> get allLamps => _allLamps;
-
-//   void addLamp(Lamp lamp) {
-//     _allLamps[lamp.uid] = lamp;
-//   }
-
-//   void removeLamp(int uid) {
-//     _allLamps.remove(uid);
-//   }
-
-//   void clear() {
-//     _allLamps.clear();
-//   }
-
-//   void updateLampMap(Map<int, Lamp> newLamps) {
-//     _allLamps.clear();
-//     _allLamps.addAll(newLamps);
-//   }
-// }
 
 // 管理所有Device
 class DeviceManager {

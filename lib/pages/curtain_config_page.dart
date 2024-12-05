@@ -42,8 +42,7 @@ class CurtainConfigPageState extends State<CurtainConfigPage> {
                       curtain: curtain,
                       onDelete: () {
                         curtainConfigNotifier.removeDevice(curtain.uid);
-                      },
-                      index: index,
+                      }
                     );
                   },
                 ),
@@ -71,13 +70,11 @@ class CurtainConfigPageState extends State<CurtainConfigPage> {
 class CurtainWidget extends StatefulWidget {
   final Curtain curtain;
   final Function onDelete;
-  final int index;
 
   const CurtainWidget(
       {super.key,
       required this.curtain,
-      required this.onDelete,
-      required this.index});
+      required this.onDelete});
 
   @override
   State<CurtainWidget> createState() => _CurtainWidgetState();
@@ -162,8 +159,6 @@ class _CurtainWidgetState extends State<CurtainWidget> {
             SizedBox(width: 20),
             DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),
-            ReorderableDragStartListener(
-                index: widget.index, child: Icon(Icons.drag_handle))
           ],
         ),
       ),

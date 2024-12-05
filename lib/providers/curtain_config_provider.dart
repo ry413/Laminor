@@ -34,9 +34,8 @@ class Curtain extends IDeviceBase {
 
   @override
   Map<String, dynamic> toJson() {
-    final parentJson = super.toJson();
     return {
-      ...parentJson,
+      ...super.toJson(),
       'outputOpenUid': outputOpen.uid,
       'outputCloseUid': outputClose.uid,
       'runDuration': runDuration,
@@ -53,7 +52,7 @@ class CurtainNotifier extends ChangeNotifier with DeviceNotifierMixin {
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
     if (allOutputs.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置输出')));
+          .showSnackBar(SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
       return;
     }
 

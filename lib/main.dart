@@ -405,7 +405,7 @@ class _MyHomePageState extends State<MyHomePage> {
       '窗帘列表': curtainConfigNotifier.allCurtains
           .map((curtain) => curtain.toJson())
           .toList(),
-      '485指令码列表': rs485CommandNotifier.allCommands.values
+      '485指令码列表': rs485CommandNotifier.allCommands
           .map((command) => command.toJson())
           .toList(),
     };

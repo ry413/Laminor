@@ -32,37 +32,18 @@ class RS485ConfigPageState extends State<RS485ConfigPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                ReorderableListView.builder(
+                ListView.builder(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  onReorder: (oldIndex, newIndex) {
-                    if (newIndex > oldIndex) newIndex -= 1;
-
-                    final keys =
-                        rs485ConfigNotifier.allCommands.keys.toList();
-                    final values = rs485ConfigNotifier.allCommands.values.toList();
-
-                    final key = keys.removeAt(oldIndex);
-                    final value = values.removeAt(oldIndex);
-
-                    keys.insert(newIndex, key);
-                    values.insert(newIndex, value);
-                    
-                    rs485ConfigNotifier.updateRS485Map(Map.fromIterables(keys, values));
-                  },
                   itemCount: rs485ConfigNotifier.allCommands.length,
                   itemBuilder: (context, index) {
                     final command =
-                        rs485ConfigNotifier.allCommands.values.toList()[index];
-                    final key = rs485ConfigNotifier.allCommands.keys.toList()[index];
+                        rs485ConfigNotifier.allCommands[index];
                     return RS485Widget(
-                      key: ValueKey(key),
                       command: command,
                       onDelete: () {
-                        rs485ConfigNotifier.removeRS485Command(key);
+                        rs485ConfigNotifier.removeDevice(command.uid);
                       },
-                      index: index,
                     );
                   },
                 ),
@@ -90,13 +71,11 @@ class RS485ConfigPageState extends State<RS485ConfigPage> {
 class RS485Widget extends StatefulWidget {
   final RS485Command command;
   final Function onDelete;
-  final int index;
 
   const RS485Widget(
       {super.key,
       required this.command,
-      required this.onDelete,
-      required this.index});
+      required this.onDelete});
 
   @override
   State<RS485Widget> createState() => _RS485WidgetState();
@@ -151,7 +130,6 @@ class _RS485WidgetState extends State<RS485Widget> {
                   }),
             ),
             Spacer(),
-            // SizedBox(width: 20),
             // 指令码本体输入框
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 250),
@@ -184,8 +162,6 @@ class _RS485WidgetState extends State<RS485Widget> {
               ),
             ),
             SizedBox(width: 40),
-            ReorderableDragStartListener(
-                index: widget.index, child: Icon(Icons.drag_handle))
           ],
         ),
       ),
