@@ -17,15 +17,6 @@ extension LampTypeExtension on LampType {
         return '调光灯';
     }
   }
-
-  List<String> get operations {
-    switch (this) {
-      case LampType.normalLight:
-        return ['打开', '关闭', '反转'];
-      case LampType.dimmableLight:
-        return ['调光']; // 调光灯就使用一个操作
-    }
-  }
 }
 
 class Lamp extends IDeviceBase {

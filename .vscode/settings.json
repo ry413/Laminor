@@ -8,5 +8,5 @@
         "ESP_ROM_ELF_DIR": "/Users/ry79/.espressif/tools/esp-rom-elfs/20230320/"
     },
     "idf.gitPath": "git",
-    "idf.port": "/dev/tty.usbmodem2101"
+    "idf.port": "/dev/tty.usbmodem1101"
 }

@@ -450,7 +450,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 ),
                 Spacer(),
                 Tooltip(
-                  message: '添加新的动作',
+                  message: '',
                   child: IconButton(
                     icon: Icon(Icons.add_circle),
                     onPressed: () {

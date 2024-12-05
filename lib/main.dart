@@ -9,12 +9,14 @@ import 'package:flutter_web_1/pages/board_input_page.dart';
 import 'package:flutter_web_1/pages/board_output_page.dart';
 import 'package:flutter_web_1/pages/curtain_config_page.dart';
 import 'package:flutter_web_1/pages/lamp_config_page.dart';
+import 'package:flutter_web_1/pages/other_device_config_page.dart';
 import 'package:flutter_web_1/pages/panel_config_page.dart';
 import 'package:flutter_web_1/pages/rs485_config_page.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/curtain_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
+import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:provider/provider.dart';
@@ -41,7 +43,10 @@ void main() {
         ),
         ChangeNotifierProvider(
           create: (context) => CurtainNotifier(),
-        )
+        ),
+        ChangeNotifierProvider(
+          create: (context) => OtherDeviceNotifier(),
+        ),
       ],
       child: MyApp(),
     ),
@@ -80,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const int indexLampPage = 7;
   static const int indexBoardInputPage = 8;
   static const int indexRS485Page = 9;
+  static const int indexOtherDevicePage = 10;
 
   var _selectedIndex = indexHomePage;
 
@@ -90,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool showPanelList = true;
   bool showCurtainList = true;
   bool showRS485List = true;
+  bool showOtherDeviceList = true;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final curtainNotifier = context.watch<CurtainNotifier>();
     final rs485Notifier = context.watch<RS485ConfigNotifier>();
     final panelNotifier = context.watch<PanelConfigNotifier>();
+    final otherDeviceNotifier = context.watch<OtherDeviceNotifier>();
 
     List<Widget> navigationItems = [
       // 主页
@@ -134,18 +142,13 @@ class _MyHomePageState extends State<MyHomePage> {
           showBoardOutputList, boardNotifier.allOutputs, indexBoardOutputPage),
 
       Divider(height: 3),
-
+      // 灯
       sideBarItem(indexLampPage, '灯配置', Icons.light, showLampList, () {
         showLampList = !showLampList;
       }),
       ...buildItemList(showLampList, lampNotifier.allLamps, indexLampPage),
 
-      sideBarItem(indexAirConPage, '空调配置', Icons.ac_unit_rounded, showACList,
-          () {
-        showACList = !showACList;
-      }),
-      ...buildItemList(showACList, airConNotifier.allAirCons, indexAirConPage),
-
+      // 窗帘
       sideBarItem(
           indexCurtainPage, '窗帘配置', Icons.curtains_closed, showCurtainList, () {
         showCurtainList = !showCurtainList;
@@ -153,6 +156,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ...buildItemList(
           showCurtainList, curtainNotifier.allCurtains, indexCurtainPage),
 
+      // 空调
+      sideBarItem(indexAirConPage, '空调配置', Icons.ac_unit_rounded, showACList,
+          () {
+        showACList = !showACList;
+      }),
+
+      ...buildItemList(showACList, airConNotifier.allAirCons, indexAirConPage),
+      // 485
       sideBarItem(
           indexRS485Page, '485配置', Icons.electrical_services, showRS485List,
           () {
@@ -160,6 +171,14 @@ class _MyHomePageState extends State<MyHomePage> {
       }),
       ...buildItemList(
           showRS485List, rs485Notifier.allCommands, indexRS485Page),
+
+      // 别的设备
+      sideBarItem(indexOtherDevicePage, '其他配置', Icons.devices_other,
+          showOtherDeviceList, () {
+        showOtherDeviceList = !showOtherDeviceList;
+      }),
+      ...buildItemList(showOtherDeviceList, otherDeviceNotifier.allOtherDevices,
+          indexOtherDevicePage),
 
       Divider(height: 3),
 
@@ -356,8 +375,8 @@ class _MyHomePageState extends State<MyHomePage> {
         return ACConfigPage();
       case indexPanelPage:
         return PanelConfigPage();
-      case indexActionGroupPage:
-      // return ActionConfigPage();
+      case indexOtherDevicePage:
+        return OtherDeviceConfigPage();
       case indexLampPage:
         return LampConfigPage();
       case indexBoardInputPage:
@@ -384,6 +403,8 @@ class _MyHomePageState extends State<MyHomePage> {
         Provider.of<RS485ConfigNotifier>(context, listen: false);
     final panelConfigNotifier =
         Provider.of<PanelConfigNotifier>(context, listen: false);
+    final otherDeviceNotifier =
+        Provider.of<OtherDeviceNotifier>(context, listen: false);
 
     // 清空可能残留的所有设备的关联按钮
     for (var device in DeviceManager().allDevices.values) {
@@ -404,6 +425,9 @@ class _MyHomePageState extends State<MyHomePage> {
           .toList(),
       '窗帘列表': curtainConfigNotifier.allCurtains
           .map((curtain) => curtain.toJson())
+          .toList(),
+      '其他设备列表': otherDeviceNotifier.allOtherDevices
+          .map((device) => device.toJson())
           .toList(),
       '485指令码列表': rs485CommandNotifier.allCommands
           .map((command) => command.toJson())
@@ -519,6 +543,13 @@ class _MyHomePageState extends State<MyHomePage> {
             .map((item) => Curtain.fromJson(item))
             .toList();
         curtainConfigNotifier.deserializationUpdate(newCurtains);
+
+        final otherDeviceNotifier =
+            Provider.of<OtherDeviceNotifier>(context, listen: false);
+        final newOtherDevice = (jsonData['其他设备列表'] as List)
+            .map((item) => OtherDevice.fromJson(item))
+            .toList();
+        otherDeviceNotifier.deserializationUpdate(newOtherDevice);
 
         final rs485CommandNotifier =
             Provider.of<RS485ConfigNotifier>(context, listen: false);

@@ -26,8 +26,6 @@ extension OutputTypeExtension on OutputType {
 enum InputLevel {
   low,
   high,
-  lowHigh,
-  highLow,
 }
 
 extension InputLevelExtension on InputLevel {
@@ -37,10 +35,6 @@ extension InputLevelExtension on InputLevel {
         return '低';
       case InputLevel.high:
         return '高';
-      case InputLevel.lowHigh:
-        return '低到高';
-      case InputLevel.highLow:
-        return '高到低';
     }
   }
 }
