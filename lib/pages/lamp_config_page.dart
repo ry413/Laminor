@@ -41,6 +41,8 @@ class LampConfigPageState extends State<LampConfigPage> {
                     return LampWidget(
                       lamp: lamp,
                       onDelete: () {
+                        // 删除灯的时候减少引用
+                        lamp.output.removeUsage();
                         lampConfigNotifier.removeDevice(lamp.uid);
                       },
                     );

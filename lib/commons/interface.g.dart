@@ -7,9 +7,9 @@ part of 'interface.dart';
 // **************************************************************************
 
 AtomicAction _$AtomicActionFromJson(Map<String, dynamic> json) => AtomicAction(
-      deviceUid: json['deviceUid'],
-      operation: json['operation'],
-      parameter: json['parameter'],
+      deviceUid: (json['deviceUid'] as num).toInt(),
+      operation: json['operation'] as String,
+      parameter: (json['parameter'] as num).toInt(),
     );
 
 Map<String, dynamic> _$AtomicActionToJson(AtomicAction instance) =>

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
-import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/commons/common_widgets.dart';
 import 'package:provider/provider.dart';
@@ -239,30 +238,6 @@ class _PanelWidgetState extends State<PanelWidget> {
       ),
     );
   }
-
-  // 构建操作目标设备的下拉菜单
-  CustomDropdown<IDeviceBase> buildTargetDevice(int index, int i) {
-    final deviceUid = widget
-        .panel.buttons[index].panelActionGroups[i].atomicActions.first.deviceUid;
-    final allDevices = DeviceManager().allDevices;
-
-    final selectedDevice = allDevices[deviceUid] ?? allDevices.values.first;
-
-    return CustomDropdown<IDeviceBase>(
-      selectedValue: selectedDevice,
-      items: allDevices.values.toList(),
-      itemLabel: (device) => device.name,
-      onChanged: (device) {
-        setState(() {
-          widget.panel.buttons[index].panelActionGroups[i].atomicActions.first
-              .deviceUid = device!.uid;
-          // 在更改目标设备时, 要同时重置选择的操作
-          widget.panel.buttons[index].panelActionGroups[i].atomicActions.first
-              .operation = device.operations.first;
-        });
-      },
-    );
-  }
 }
 
 class PanelButtonWidget extends StatefulWidget {
@@ -349,13 +324,15 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     ),
                     onPressed: () {
                       if (DeviceManager().allDevices.values.isEmpty) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text('请先添加设备'),duration: Duration(seconds: 1)));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('请先添加设备'),
+                            duration: Duration(seconds: 1)));
                         return;
                       }
                       setState(() {
                         if (widget.button.panelActionGroups.length < 4) {
-                          widget.button.panelActionGroups.add(PanelButtonActionGroup.defaultActionGroup());
+                          widget.button.panelActionGroups
+                              .add(PanelButtonActionGroup.defaultActionGroup());
                           widget.button.currentActionGroupIndex =
                               widget.button.panelActionGroups.length - 1;
                         }
@@ -393,8 +370,24 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
               ],
             ),
             Column(
-              children: List.generate(currentActionGroup.atomicActions.length,
-                  (i) => buildAtomicActionRow(i)),
+              children: List.generate(
+                  currentActionGroup.atomicActions.length,
+                  (index) => AtomicActionRowWidget(
+                      atomicAction: widget
+                          .button
+                          .panelActionGroups[
+                              widget.button.currentActionGroupIndex]
+                          .atomicActions[index],
+                      onDelete: () => {
+                            setState(() {
+                              widget
+                                  .button
+                                  .panelActionGroups[
+                                      widget.button.currentActionGroupIndex]
+                                  .atomicActions
+                                  .removeAt(index);
+                            })
+                          })),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -407,7 +400,8 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     CustomDropdown<ButtonPolitAction>(
                       selectedValue: widget
                           .button
-                          .panelActionGroups[widget.button.currentActionGroupIndex]
+                          .panelActionGroups[
+                              widget.button.currentActionGroupIndex]
                           .pressedPolitAction,
                       items: ButtonPolitAction.values,
                       itemLabel: (item) => item.displayName,
@@ -432,7 +426,8 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     CustomDropdown<ButtonOtherPolitAction>(
                       selectedValue: widget
                           .button
-                          .panelActionGroups[widget.button.currentActionGroupIndex]
+                          .panelActionGroups[
+                              widget.button.currentActionGroupIndex]
                           .pressedOtherPolitAction,
                       items: ButtonOtherPolitAction.values,
                       itemLabel: (item) => item.displayName,
@@ -455,8 +450,9 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     icon: Icon(Icons.add_circle),
                     onPressed: () {
                       if (DeviceManager().allDevices.isEmpty) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text('请先添加设备'), duration: Duration(seconds: 1)));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('请先添加设备'),
+                            duration: Duration(seconds: 1)));
                         return;
                       }
                       setState(() {
@@ -471,108 +467,5 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
             ),
           ],
         ));
-  }
-
-  Widget buildAtomicActionRow(int index) {
-    return Row(
-      children: [
-        // 目标设备下拉菜单
-        Row(
-          children: [
-            SectionTitle(title: '对'),
-            buildTargetDevice(index),
-          ],
-        ),
-        SizedBox(width: 20),
-        // 展示此Device拥有的动作（操作）
-        Row(
-          children: [
-            SectionTitle(title: '执行'),
-            buildDeviceAction(index),
-          ],
-        ),
-        Spacer(),
-        // 删除动作按钮
-        DeleteBtnDense(
-            message: '',
-            onDelete: () {
-              setState(() {
-                widget
-                    .button
-                    .panelActionGroups[widget.button.currentActionGroupIndex]
-                    .atomicActions
-                    .removeAt(index);
-              });
-            },
-            size: 20),
-        SizedBox(width: 8),
-      ],
-    );
-  }
-
-  // 构建目标设备的下拉菜单
-  Widget buildTargetDevice(int index) {
-    final deviceUid = widget
-        .button
-        .panelActionGroups[widget.button.currentActionGroupIndex]
-        .atomicActions[index]
-        .deviceUid;
-    final allDevices = DeviceManager().allDevices;
-
-    final selectedDevice = allDevices[deviceUid] ?? allDevices.values.first;
-
-    return CustomDropdown<IDeviceBase>(
-      selectedValue: selectedDevice,
-      items: allDevices.values.toList(),
-      itemLabel: (device) => device.name,
-      onChanged: (device) {
-        setState(() {
-          widget.button.panelActionGroups[widget.button.currentActionGroupIndex]
-              .atomicActions[index].deviceUid = device!.uid;
-          // 重置操作
-          widget.button.panelActionGroups[widget.button.currentActionGroupIndex]
-              .atomicActions[index].operation = device.operations.first;
-        });
-      },
-    );
-  }
-
-  // 构建设备操作的下拉菜单
-  Widget buildDeviceAction(int index) {
-    final atomicAction = widget
-        .button
-        .panelActionGroups[widget.button.currentActionGroupIndex]
-        .atomicActions[index];
-
-    final device = DeviceManager().allDevices[atomicAction.deviceUid];
-    if (device == null) return SizedBox.shrink();
-
-    return Row(
-      children: [
-        CustomDropdown<String>(
-          selectedValue: atomicAction.operation,
-          items: device.operations,
-          itemLabel: (operation) => operation,
-          onChanged: (value) {
-            setState(() {
-              atomicAction.operation = value!;
-            });
-          },
-        ),
-        if (device.runtimeType == Lamp &&
-            (device as Lamp).type == LampType.dimmableLight) ...[
-          SectionTitle(title: '至'),
-          CustomDropdown<int>(
-              selectedValue: atomicAction.parameter,
-              items: List.generate(11, (i) => i),
-              itemLabel: (value) => '${value * 10}%',
-              onChanged: (value) {
-                setState(() {
-                  atomicAction.parameter = value!;
-                });
-              })
-        ]
-      ],
-    );
   }
 }

@@ -43,6 +43,7 @@ class OtherDeviceConfigPageState extends State<OtherDeviceConfigPage> {
                     return OtherDeviceWidget(
                       device: device,
                       onDelete: () {
+                        device.removeUsage();
                         otherDeviceConfigNotifier.removeDevice(device.uid);
                       },
                     );
@@ -143,10 +144,14 @@ class _OtherDeviceWidgetState extends State<OtherDeviceWidget> {
               // 继电器设定
               BoardOutputDropdown(
                   label: '通道',
-                  selectedOutput: widget.device.output!,
+                  selectedOutput: widget.device.output,
                   onChanged: (newValue) {
                     setState(() {
-                      widget.device.output = newValue;
+                      // if (widget.device.output != null) {
+                      //   widget.device.output.removeUsage();
+                      // // }
+                      // widget.device.output = newValue;
+                      // widget.device.output.addUsage();
                     });
                   }),
             ],

@@ -42,11 +42,7 @@ Map<String, dynamic> _$BoardInputToJson(BoardInput instance) =>
 
 BoardConfig _$BoardConfigFromJson(Map<String, dynamic> json) => BoardConfig(
       id: (json['id'] as num).toInt(),
-    )
-      ..outputs = BoardConfig._outputsFromJson(json['outputs'] as List)
-      ..inputs = (json['inputs'] as List<dynamic>)
-          .map((e) => BoardInput.fromJson(e as Map<String, dynamic>))
-          .toList();
+    )..outputs = BoardConfig._outputsFromJson(json['outputs'] as List);
 
 Map<String, dynamic> _$BoardConfigToJson(BoardConfig instance) =>
     <String, dynamic>{

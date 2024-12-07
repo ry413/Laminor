@@ -80,8 +80,6 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final boardNotifier = context.watch<BoardConfigNotifier>();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -267,6 +265,17 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   });
                 },
               ),
+              // 添加动作组按钮
+              Tooltip(
+                message: '删除通道',
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    size: 24,
+                  ),
+                  onPressed: () => widget.onDelete(),
+                ),
+              ),
               Spacer(),
               // 左翻页按钮
               IconButton(
@@ -305,20 +314,20 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                     size: 24,
                   ),
                   onPressed: () {
-                  setState(() {
-                    if (widget.input.actionGroups.length < 4) {
-                      widget.input.actionGroups.add(
-                        InputActionGroup(
-                          atomicActions: [
-                            AtomicAction.defaultAction(),
-                          ],
-                        ),
-                      );
-                      widget.input.currentActionGroupIndex =
-                          widget.input.actionGroups.length - 1;
-                    }
-                  });
-                },
+                    setState(() {
+                      if (widget.input.actionGroups.length < 4) {
+                        widget.input.actionGroups.add(
+                          InputActionGroup(
+                            atomicActions: [
+                              AtomicAction.defaultAction(),
+                            ],
+                          ),
+                        );
+                        widget.input.currentActionGroupIndex =
+                            widget.input.actionGroups.length - 1;
+                      }
+                    });
+                  },
                 ),
               ),
               // 删除动作组按钮
@@ -354,7 +363,21 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
           Column(
             children: List.generate(
               currentActionGroup.atomicActions.length,
-              (index) => buildAtomicActionRow(index),
+              (index) => AtomicActionRowWidget(
+                  atomicAction: widget
+                      .input
+                      .actionGroups[widget.input.currentActionGroupIndex]
+                      .atomicActions[index],
+                  onDelete: () => {
+                        setState(() {
+                          widget
+                              .input
+                              .actionGroups[
+                                  widget.input.currentActionGroupIndex]
+                              .atomicActions
+                              .removeAt(index);
+                        })
+                      }),
             ),
           ),
           // 添加新的动作到当前动作组
@@ -385,84 +408,5 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
         ],
       ),
     );
-  }
-
-  // 构建原子动作行
-  Widget buildAtomicActionRow(int index) {
-    return Row(
-      children: [
-        // 目标设备下拉菜单
-        Expanded(
-          flex: 2,
-          child: buildTargetDevice(index),
-        ),
-        SizedBox(width: 10),
-        // 设备操作下拉菜单
-        Expanded(
-          flex: 2,
-          child: buildDeviceOperation(index),
-        ),
-        // 删除动作按钮
-        DeleteBtnDense(
-            message: '',
-            onDelete: () {
-              setState(() {
-                widget.input.actionGroups[widget.input.currentActionGroupIndex]
-                    .atomicActions
-                    .removeAt(index);
-              });
-            },
-            size: 20)
-      ],
-    );
-  }
-
-  // 构建目标设备下拉菜单
-  Widget buildTargetDevice(int index) {
-    final atomicAction = widget
-        .input
-        .actionGroups[widget.input.currentActionGroupIndex]
-        .atomicActions[index];
-
-    final deviceUid = atomicAction.deviceUid;
-    final allDevices = DeviceManager().allDevices;
-    final selectedDevice = allDevices[deviceUid] ?? allDevices.values.first;
-
-    return CustomDropdown<IDeviceBase>(
-      selectedValue: selectedDevice,
-      items: allDevices.values.toList(),
-      itemLabel: (device) => device.name,
-      onChanged: (device) {
-        setState(() {
-          atomicAction.deviceUid = device!.uid;
-          // 重置操作
-          atomicAction.operation = device.operations.first;
-        });
-      },
-    );
-  }
-
-  // 构建设备操作下拉菜单
-  Widget buildDeviceOperation(int index) {
-    final atomicAction = widget
-        .input
-        .actionGroups[widget.input.currentActionGroupIndex]
-        .atomicActions[index];
-
-    final deviceUid = atomicAction.deviceUid;
-    final device = DeviceManager().allDevices[deviceUid];
-
-    return device != null
-        ? CustomDropdown<String>(
-            selectedValue: atomicAction.operation,
-            items: device.operations,
-            itemLabel: (operation) => operation,
-            onChanged: (value) {
-              setState(() {
-                atomicAction.operation = value!;
-              });
-            },
-          )
-        : SizedBox.shrink();
   }
 }

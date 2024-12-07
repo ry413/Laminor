@@ -4,8 +4,9 @@ import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
+import 'package:provider/provider.dart';
 
-enum OtherDeviceType { outputControl, heartbeatState }
+enum OtherDeviceType { outputControl, heartbeatState, delayer }
 
 extension OtherDeviceTypeExtension on OtherDeviceType {
   String get displayName {
@@ -14,26 +15,53 @@ extension OtherDeviceTypeExtension on OtherDeviceType {
         return '输出通道控制';
       case OtherDeviceType.heartbeatState:
         return '心跳状态';
+      case OtherDeviceType.delayer:
+        return '延时器';
     }
   }
 }
 
 class OtherDevice extends IDeviceBase {
   OtherDeviceType type;
-  BoardOutput? output;
+  BoardOutput? _output;
 
   OtherDevice({
     required super.name,
     required super.uid,
     required this.type,
-  });
+    BoardOutput? output,
+  }) : _output = output {
+    if (_output != null) {
+      _output!.addUsage();
+    }
+  }
+
+  BoardOutput get output {
+    if (_output == null) {
+      _output = BoardManager().allOutputs.values.first;
+      return _output!;
+    } else {
+      return _output!;
+    }
+  }
+  set output(BoardOutput newOutput) {
+    if (_output != null) {
+      _output!.removeUsage();
+    }
+    _output = newOutput;
+    _output!.addUsage();
+  }
 
   @override
   List<String> get operations {
     if (type == OtherDeviceType.outputControl) {
       return ['打开', '关闭', '反转'];
-    } else {
+    } else if (type == OtherDeviceType.heartbeatState) {
       return ['睡眠'];
+    } else if (type == OtherDeviceType.delayer) {
+      return ['延时'];
+    } else {
+      return [];
     }
   }
 
@@ -56,7 +84,7 @@ class OtherDevice extends IDeviceBase {
     return {
       ...super.toJson(),
       'type': type.index,
-      if (output != null) 'outputUid': output!.uid
+      if (_output != null) 'outputUid': _output!.uid
     };
   }
 }
@@ -66,18 +94,15 @@ class OtherDeviceNotifier extends ChangeNotifier with DeviceNotifierMixin {
       DeviceManager().getDevices<OtherDevice>().toList();
 
   void addOtherDevice(BuildContext context) {
-    // final allOutputs =
-    //     Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
-    // if (allOutputs.isEmpty) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
-    //   return;
-    // }
+    var type = OtherDeviceType.outputControl;
+    if (Provider.of<BoardConfigNotifier>(context, listen: false)
+        .allOutputs
+        .isEmpty) {
+      type = OtherDeviceType.heartbeatState;
+    }
 
     final otherDevice = OtherDevice(
-        name: '其他(抽象)设备',
-        uid: UidManager().generateDeviceUid(),
-        type: OtherDeviceType.heartbeatState);
+        name: '其他(抽象)设备', uid: UidManager().generateDeviceUid(), type: type);
 
     DeviceManager().addDevice(otherDevice);
     notifyListeners();

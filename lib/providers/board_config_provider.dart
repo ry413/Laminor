@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart' hide Action;
+import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/uid_manager.dart';
@@ -41,7 +42,7 @@ extension InputLevelExtension on InputLevel {
 
 // 板子上的一个输出
 @JsonSerializable()
-class BoardOutput {
+class BoardOutput with UsageCountMixin {
   int hostBoardId; // 电路所在的板子的ID
 
   @JsonKey(fromJson: _outputTypeFromJson, toJson: _outputTypeToJson)
@@ -129,6 +130,8 @@ class BoardConfig {
 
   @JsonKey(fromJson: _outputsFromJson, toJson: _outputsToJson)
   Map<int, BoardOutput> outputs = {};
+
+  @JsonKey(includeFromJson: false, includeToJson: true)
   List<BoardInput> inputs = [];
 
   BoardConfig({
@@ -143,6 +146,12 @@ class BoardConfig {
   factory BoardConfig.fromJson(Map<String, dynamic> json) =>
       _$BoardConfigFromJson(json);
   Map<String, dynamic> toJson() => _$BoardConfigToJson(this);
+
+  void loadInputsFromJson(List<dynamic> inputsJson) {
+    inputs = inputsJson
+        .map((e) => BoardInput.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 
   // 为outputs的Map类型调整序列化方式
   static Map<int, BoardOutput> _outputsFromJson(List<dynamic> jsonList) {
@@ -206,6 +215,10 @@ class BoardConfigNotifier extends ChangeNotifier {
     for (var board in newBoards) {
       _boardManager.addBoard(board);
     }
+    notifyListeners();
+  }
+
+  void updateWidget() {
     notifyListeners();
   }
 }

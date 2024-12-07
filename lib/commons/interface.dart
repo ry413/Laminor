@@ -1,3 +1,4 @@
+import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -17,13 +18,18 @@ class AtomicAction {
     required this.deviceUid,
     required this.operation,
     required this.parameter,
-  });
+  }) {
+    DeviceManager().allDevices[deviceUid]!.addUsage();
+  }
 
   // 默认构造函数，使用默认值
   AtomicAction.defaultAction()
       : deviceUid = DeviceManager().allDevices.values.first.uid,
         operation = DeviceManager().allDevices.values.first.operations.first,
-        parameter = 0;
+        parameter = 0 {
+          // 既然默认用第一个设备, 也要增加它的引用计数
+          DeviceManager().allDevices.values.first.addUsage();
+        }
 
   factory AtomicAction.fromJson(Map<String, dynamic> json) =>
       _$AtomicActionFromJson(json);
@@ -40,7 +46,7 @@ class AssociatedButton {
 }
 
 // 有操作的设备的基类
-abstract class IDeviceBase {
+abstract class IDeviceBase with UsageCountMixin {
   String name;
   final int uid;
   List<AssociatedButton>

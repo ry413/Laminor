@@ -39,11 +39,13 @@ class CurtainConfigPageState extends State<CurtainConfigPage> {
                   itemBuilder: (context, index) {
                     final curtain = curtainConfigNotifier.allCurtains[index];
                     return CurtainWidget(
-                      curtain: curtain,
-                      onDelete: () {
-                        curtainConfigNotifier.removeDevice(curtain.uid);
-                      }
-                    );
+                        curtain: curtain,
+                        onDelete: () {
+                          // 删除窗帘同时删除引用计数
+                          curtain.outputOpen.removeUsage();
+                          curtain.outputClose.removeUsage();
+                          curtainConfigNotifier.removeDevice(curtain.uid);
+                        });
                   },
                 ),
                 SizedBox(height: 80)
@@ -72,9 +74,7 @@ class CurtainWidget extends StatefulWidget {
   final Function onDelete;
 
   const CurtainWidget(
-      {super.key,
-      required this.curtain,
-      required this.onDelete});
+      {super.key, required this.curtain, required this.onDelete});
 
   @override
   State<CurtainWidget> createState() => _CurtainWidgetState();
@@ -157,7 +157,8 @@ class _CurtainWidgetState extends State<CurtainWidget> {
                   widget.curtain.runDuration = value;
                 }),
             SizedBox(width: 20),
-            DeleteBtnDense(message: '删除', onDelete: () => widget.onDelete(), size: 20),
+            DeleteBtnDense(
+                message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),
           ],
         ),

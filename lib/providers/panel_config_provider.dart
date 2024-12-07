@@ -50,13 +50,7 @@ class PanelButtonActionGroup {
       required this.pressedOtherPolitAction});
 
   PanelButtonActionGroup.defaultActionGroup()
-      : atomicActions = [
-          AtomicAction(
-              deviceUid: DeviceManager().allDevices.values.first.uid,
-              operation:
-                  DeviceManager().allDevices.values.first.operations.first,
-              parameter: 0)
-        ],
+      : atomicActions = [AtomicAction.defaultAction()],
         pressedPolitAction = ButtonPolitAction.ignore,
         pressedOtherPolitAction = ButtonOtherPolitAction.ignore;
 
@@ -152,6 +146,10 @@ class Panel {
       for (var panelAction in button.panelActionGroups) {
         // 遍历每个PanelAction的AtomicAction
         for (var atomicAction in panelAction.atomicActions) {
+          // 如果这个AtomicAction是延时, 就不用担心, 跳过它. 这个按钮仍然有可能是关联按钮
+          if (atomicAction.operation == '延时') {
+            continue;
+          }
           if (firstDeviceUid != atomicAction.deviceUid) {
             allSameDeviceUid = false;
             break;
@@ -203,7 +201,9 @@ class PanelConfigNotifier extends ChangeNotifier {
     _allPanels
         .add(Panel(id: _allPanels.length, type: type, name: '未命名 面板', buttons: [
       for (int i = 0; i < buttonCount; i++) ...[
-        PanelButton(id: i, panelActionGroups: [PanelButtonActionGroup.defaultActionGroup()]),
+        PanelButton(
+            id: i,
+            panelActionGroups: [PanelButtonActionGroup.defaultActionGroup()]),
       ]
     ]));
     notifyListeners();
@@ -217,6 +217,10 @@ class PanelConfigNotifier extends ChangeNotifier {
   void deserializationUpdate(List<Panel> newPanels) {
     _allPanels.clear();
     _allPanels.addAll(newPanels);
+    notifyListeners();
+  }
+
+  void updateWidget() {
     notifyListeners();
   }
 }

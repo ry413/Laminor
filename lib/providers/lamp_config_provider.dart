@@ -21,14 +21,23 @@ extension LampTypeExtension on LampType {
 
 class Lamp extends IDeviceBase {
   LampType type;
-  BoardOutput output;
+  BoardOutput _output;
 
   Lamp({
     required super.name,
     required super.uid,
     required this.type,
-    required this.output,
-  });
+    required BoardOutput output,
+  }) : _output = output {
+    _output.addUsage();
+  }
+
+  BoardOutput get output => _output;
+  set output(BoardOutput newOutput) {
+    _output.removeUsage();
+    _output = newOutput;
+    _output.addUsage();
+  }
 
   @override
   List<String> get operations {
@@ -54,7 +63,7 @@ class Lamp extends IDeviceBase {
     return {
       ...super.toJson(),
       'type': type.index,
-      'outputUid': output.uid,
+      'outputUid': _output.uid,
     };
   }
 }
@@ -66,8 +75,8 @@ class LampNotifier extends ChangeNotifier with DeviceNotifierMixin {
     final allOutputs =
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
     if (allOutputs.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
       return;
     }
 

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
+import 'package:flutter_web_1/providers/lamp_config_provider.dart';
+import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:provider/provider.dart';
 
 class ConfigSection extends StatelessWidget {
@@ -116,13 +120,42 @@ class _BoardOutputDropdownState extends State<BoardOutputDropdown> {
       children: [
         Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
         CustomDropdown<BoardOutput>(
-            selectedValue: allOutput.containsValue(widget.selectedOutput)
-                ? widget.selectedOutput
-                : allOutput.values.first,
-            items: allOutput.values.toList(),
-            itemLabel: (output) =>
-                '${output.name} (板 ${output.hostBoardId} 输出 ${output.channel})',
-            onChanged: (output) => widget.onChanged(output!)),
+          selectedValue: allOutput.containsValue(widget.selectedOutput)
+              ? widget.selectedOutput
+              : allOutput.values.first,
+          items: allOutput.values.toList(),
+          itemLabel: (output) =>
+              '${output.name} (板 ${output.hostBoardId} 输出 ${output.channel})',
+          onChanged: (output) => widget.onChanged(output!),
+          itemStyleBuilder: (output, isSelected, isHovered) {
+            // 如果是 BoardOutput 类型，检查 inUse 状态
+            // 若 inUse 为 true 则使用橙色底色，否则使用默认逻辑
+            if (output.inUse) {
+              return BoxDecoration(
+                color: isSelected
+                    ? Colors.orange.withOpacity(0.3)
+                    : isHovered
+                        ? Colors.orange.withOpacity(0.2)
+                        : Colors.orange.withOpacity(0.1),
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[300]!),
+                ),
+              );
+            } else {
+              // 未被占用的输出通道，使用默认颜色方案
+              return BoxDecoration(
+                color: isSelected
+                    ? Colors.blue.withOpacity(0.1)
+                    : isHovered
+                        ? Colors.grey.withOpacity(0.2)
+                        : Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[300]!),
+                ),
+              );
+            }
+          },
+        ),
       ],
     );
   }
@@ -256,14 +289,16 @@ class CustomDropdown<T> extends StatefulWidget {
   final List<T> items;
   final String Function(T) itemLabel;
   final ValueChanged<T?> onChanged;
+  final BoxDecoration Function(T item, bool isSelected, bool isHovered)?
+      itemStyleBuilder;
 
-  const CustomDropdown({
-    super.key,
-    required this.selectedValue,
-    required this.items,
-    required this.itemLabel,
-    required this.onChanged,
-  });
+  const CustomDropdown(
+      {super.key,
+      required this.selectedValue,
+      required this.items,
+      required this.itemLabel,
+      required this.onChanged,
+      this.itemStyleBuilder});
 
   @override
   CustomDropdownState<T> createState() => CustomDropdownState<T>();
@@ -342,16 +377,19 @@ class CustomDropdownState<T> extends State<CustomDropdown<T>> {
                 minWidth: 80, // 设置最小宽度
               ),
               padding: EdgeInsets.only(left: 4, top: 3, bottom: 3),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.blue.withOpacity(0.1)
-                    : isHovered
-                        ? Colors.grey.withOpacity(0.2)
-                        : Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: widget.itemStyleBuilder != null
+                  ? widget.itemStyleBuilder!(item, isSelected, isHovered)
+                  : // 如果未传入自定义回调, 则使用默认逻辑
+                  BoxDecoration(
+                      color: isSelected
+                          ? Colors.blue.withOpacity(0.1)
+                          : isHovered
+                              ? Colors.grey.withOpacity(0.2)
+                              : Colors.white,
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey[300]!),
+                      ),
+                    ),
               child: Row(
                 children: [
                   Text(
@@ -380,11 +418,8 @@ class DeleteBtnDense extends StatelessWidget {
   final String message;
   final Function onDelete;
   final double size;
-  const DeleteBtnDense({
-    required this.message,
-    required this.onDelete,
-    required this.size
-  });
+  const DeleteBtnDense(
+      {required this.message, required this.onDelete, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +436,6 @@ class DeleteBtnDense extends StatelessWidget {
     );
   }
 }
-
 
 // 悬浮于页面右下角的按钮
 class FloatButton extends StatelessWidget {
@@ -424,5 +458,192 @@ class FloatButton extends StatelessWidget {
         child: Icon(Icons.add),
       ),
     );
+  }
+}
+
+class AtomicActionRowWidget extends StatefulWidget {
+  final AtomicAction atomicAction;
+  final Function onDelete;
+
+  const AtomicActionRowWidget({
+    super.key,
+    required this.atomicAction,
+    required this.onDelete,
+  });
+
+  @override
+  AtomicActionRowWidgetState createState() => AtomicActionRowWidgetState();
+}
+
+class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
+  TextEditingController? _delayController;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化延时输入框文本
+    _delayController =
+        TextEditingController(text: widget.atomicAction.parameter.toString());
+  }
+
+  @override
+  void dispose() {
+    _delayController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final atomicAction = widget.atomicAction;
+
+    return Row(
+      children: [
+        // 目标设备下拉菜单
+        Row(
+          children: [
+            SectionTitle(title: '目标:'),
+            buildTargetDevice(atomicAction, atomicAction.deviceUid),
+          ],
+        ),
+        SizedBox(width: 20),
+        // 展示此Device拥有的操作
+        Row(
+          children: [
+            SectionTitle(title: '操作:'),
+            buildDeviceOperation(atomicAction),
+          ],
+        ),
+        Spacer(),
+        // 删除动作按钮
+        DeleteBtnDense(
+          message: '',
+          onDelete: () => widget.onDelete(),
+          size: 20,
+        ),
+        SizedBox(width: 8),
+      ],
+    );
+  }
+
+  Widget buildTargetDevice(AtomicAction atomicAction, int oldDeviceUid) {
+    final allDevices = DeviceManager().allDevices;
+    final selectedDevice =
+        allDevices[atomicAction.deviceUid] ?? allDevices.values.first;
+
+    return CustomDropdown<IDeviceBase>(
+      selectedValue: selectedDevice,
+      items: allDevices.values.toList(),
+      itemLabel: (device) => device.name,
+      onChanged: (device) {
+        setState(() {
+          // 删除对旧设备的引用计数
+          DeviceManager().allDevices[oldDeviceUid]?.removeUsage();
+
+          atomicAction.deviceUid = device!.uid;
+          // 增加对新设备的引用计数
+          device.addUsage();
+
+          // 重置操作
+          atomicAction.operation = device.operations.first;
+        });
+      },
+      itemStyleBuilder: (device, isSelected, isHovered) {
+        // 若 inUse 为 true 则使用橙色底色，否则使用默认逻辑
+        if (device.inUse) {
+          return BoxDecoration(
+            color: isSelected
+                ? Colors.orange.withOpacity(0.3)
+                : isHovered
+                    ? Colors.orange.withOpacity(0.2)
+                    : Colors.orange.withOpacity(0.1),
+            border: Border(
+              bottom: BorderSide(color: Colors.grey[300]!),
+            ),
+          );
+        } else {
+          return BoxDecoration(
+            color: isSelected
+                ? Colors.blue.withOpacity(0.1)
+                : isHovered
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.white,
+            border: Border(
+              bottom: BorderSide(color: Colors.grey[300]!),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Widget buildDeviceOperation(AtomicAction atomicAction) {
+    final device = DeviceManager().allDevices[atomicAction.deviceUid];
+    if (device == null) return SizedBox.shrink();
+
+    final isLamp = device is Lamp;
+    final isDimmable = isLamp && device.type == LampType.dimmableLight;
+
+    final isOtherDevice = device is OtherDevice;
+    final isDelayer = isOtherDevice && device.type == OtherDeviceType.delayer;
+
+    List<Widget> children = [
+      CustomDropdown<String>(
+        selectedValue: atomicAction.operation,
+        items: device.operations,
+        itemLabel: (operation) => operation,
+        onChanged: (value) {
+          setState(() {
+            atomicAction.operation = value!;
+          });
+        },
+      ),
+    ];
+
+    if (isDimmable) {
+      children.addAll([
+        SectionTitle(title: '至'),
+        CustomDropdown<int>(
+          selectedValue: atomicAction.parameter,
+          items: List.generate(11, (i) => i),
+          itemLabel: (value) => '${value * 10}%',
+          onChanged: (value) {
+            setState(() {
+              atomicAction.parameter = value!;
+            });
+          },
+        ),
+      ]);
+    } else if (isDelayer) {
+      children.addAll([
+        IntrinsicWidth(
+          child: TextField(
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4.0),
+                borderSide: BorderSide(width: 1, color: Colors.brown),
+              ),
+            ),
+            controller: _delayController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (value) {
+              setState(() {
+                // 当用户输入为空时，我们默认为0秒
+                if (value.isEmpty) {
+                  atomicAction.parameter = 0;
+                } else {
+                  atomicAction.parameter = int.parse(value);
+                }
+              });
+            },
+          ),
+        ),
+        SectionTitle(title: '秒'),
+      ]);
+    }
+
+    return Row(children: children);
   }
 }

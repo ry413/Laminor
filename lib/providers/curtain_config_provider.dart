@@ -7,17 +7,34 @@ import 'package:flutter_web_1/uid_manager.dart';
 import 'package:provider/provider.dart';
 
 class Curtain extends IDeviceBase {
-  BoardOutput outputOpen;
-  BoardOutput outputClose;
+  BoardOutput _outputOpen;
+  BoardOutput _outputClose;
   int runDuration;
 
   Curtain({
     required super.name,
     required super.uid,
-    required this.outputOpen,
-    required this.outputClose,
+    required BoardOutput outputOpen,
+    required BoardOutput outputClose,
     required this.runDuration,
-  });
+  })  : _outputOpen = outputOpen,
+        _outputClose = outputClose {
+    _outputOpen.addUsage();
+    _outputClose.addUsage();
+  }
+
+  BoardOutput get outputOpen => _outputOpen;
+  set outputOpen(BoardOutput newOutput) {
+    _outputOpen.removeUsage();
+    _outputOpen = newOutput;
+    _outputOpen.addUsage();
+  }
+  BoardOutput get outputClose => _outputClose;
+  set outputClose(BoardOutput newOutput) {
+    _outputClose.removeUsage();
+    _outputClose = newOutput;
+    _outputClose.addUsage();
+  }
 
   @override
   List<String> get operations => ["打开", "关闭", "反转"];
@@ -51,8 +68,8 @@ class CurtainNotifier extends ChangeNotifier with DeviceNotifierMixin {
     final allOutputs =
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
     if (allOutputs.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
       return;
     }
 

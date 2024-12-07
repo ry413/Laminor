@@ -517,6 +517,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // 解析 JSON 数据并更新对应的配置
         final boardConfigNotifier =
             Provider.of<BoardConfigNotifier>(context, listen: false);
+        // 这里不会反序列化inputs, 而是到设备们反序列化完了才到它
         final newBoards = (jsonData['板子列表'] as List)
             .map((item) => BoardConfig.fromJson(item))
             .toList();
@@ -558,6 +559,13 @@ class _MyHomePageState extends State<MyHomePage> {
             .toList();
         rs485CommandNotifier.deserializationUpdate(newCommands);
 
+        // 到这里再解析inputs
+        final boardListJson = (jsonData['板子列表'] as List);
+        for (int i = 0; i < newBoards.length; i++) {
+          final boardJson = boardListJson[i] as Map<String, dynamic>;
+          newBoards[i].loadInputsFromJson(boardJson['inputs'] as List<dynamic>);
+        }
+
         final panelConfigNotifier =
             Provider.of<PanelConfigNotifier>(context, listen: false);
         final newPanels = (jsonData['面板列表'] as List)
@@ -567,19 +575,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
         // 提示用户上传成功
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("JSON 文件上传并解析成功")),
+          SnackBar(
+            content: Text("JSON 文件上传并解析成功"),
+            duration: Duration(seconds: 1),
+          ),
         );
       } catch (e) {
         // 提示解析错误
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("解析 JSON 文件失败: $e")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("解析 JSON 文件失败: $e"),
+          duration: Duration(seconds: 1),
+        ));
       }
     } else {
       // 用户取消选择文件
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("未选择任何文件")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("未选择任何文件"),
+        duration: Duration(seconds: 1),
+      ));
     }
   }
 }
