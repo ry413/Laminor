@@ -462,7 +462,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> generateAndSendJson() async {
     String jsonStr = jsonEncode(generateJson());
-    sendJsonOverTcp(jsonStr, '192.168.2.3', 8080);
+    sendJsonOverTcp(jsonStr, '192.168.2.33', 8080);
   }
 
   // 将 JSON 字符串通过 TCP 发送

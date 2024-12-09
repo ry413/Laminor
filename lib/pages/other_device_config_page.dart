@@ -147,11 +147,7 @@ class _OtherDeviceWidgetState extends State<OtherDeviceWidget> {
                   selectedOutput: widget.device.output,
                   onChanged: (newValue) {
                     setState(() {
-                      // if (widget.device.output != null) {
-                      //   widget.device.output.removeUsage();
-                      // // }
-                      // widget.device.output = newValue;
-                      // widget.device.output.addUsage();
+                      widget.device.output = newValue;
                     });
                   }),
             ],

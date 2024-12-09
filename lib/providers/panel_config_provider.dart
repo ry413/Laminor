@@ -84,10 +84,13 @@ class PanelButton {
 
   int currentActionGroupIndex;
 
+  int explicitAssociatedDeviceUid; // 本面板显式关联的设备UID, 会使这个按钮无论如何都会成为此设备的关联按钮
+
   PanelButton(
       {required this.id,
       required this.panelActionGroups,
-      this.currentActionGroupIndex = 0});
+      this.currentActionGroupIndex = 0,
+      this.explicitAssociatedDeviceUid = -1});
 
   // PanelButton的正反序列化
   factory PanelButton.fromJson(Map<String, dynamic> json) {
@@ -96,13 +99,17 @@ class PanelButton {
         panelActionGroups: (json['actionGroups'] as List<dynamic>)
             .map((e) =>
                 PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
-            .toList());
+            .toList(),
+        explicitAssociatedDeviceUid:
+            (json['explicitAssociatedDeviceUid'] as num?)?.toInt() ?? -1);
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'actionGroups': panelActionGroups.map((e) => e.toJson()).toList(),
+      if (explicitAssociatedDeviceUid != -1)
+        'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid
     };
   }
 }
@@ -137,15 +144,23 @@ class Panel {
       if (button.panelActionGroups.isEmpty) continue;
       if (button.panelActionGroups.first.atomicActions.isEmpty) continue;
 
+      // 固定把此按钮添加给它可能存在的显式关联的设备
+      if (button.explicitAssociatedDeviceUid != -1) {
+        DeviceManager()
+            .allDevices[button.explicitAssociatedDeviceUid]!
+            .addAssociatedButton(
+                AssociatedButton(panelId: id, buttonId: button.id));
+      }
+
       // 判断每个按钮它自己所有的Action的deviceUid是否相同(表示是否指向同一个设备)
       final firstDeviceUid =
           button.panelActionGroups.first.atomicActions.first.deviceUid;
       bool allSameDeviceUid = true;
 
-      // 遍历每个PanelAction
-      for (var panelAction in button.panelActionGroups) {
+      // 遍历每个actionGroup
+      for (var actionGroup in button.panelActionGroups) {
         // 遍历每个PanelAction的AtomicAction
-        for (var atomicAction in panelAction.atomicActions) {
+        for (var atomicAction in actionGroup.atomicActions) {
           // 如果这个AtomicAction是延时, 就不用担心, 跳过它. 这个按钮仍然有可能是关联按钮
           if (atomicAction.operation == '延时') {
             continue;
@@ -165,6 +180,8 @@ class Panel {
                 button.panelActionGroups.first.atomicActions.first.deviceUid]!
             .addAssociatedButton(
                 AssociatedButton(panelId: id, buttonId: button.id));
+
+        // 如果按钮上有
       }
     }
     // 上面只是把数据准备好, 不在这里操作, 而是等各个设备自己的toJson

@@ -287,6 +287,18 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                         });
                       }),
                 ),
+                Text('显式关联于'),
+                CustomDropdown<int>(
+                  selectedValue: widget.button.explicitAssociatedDeviceUid,
+                  items: DeviceManager().allDevices.keys.toList(),
+                  itemLabel: (uid) => DeviceManager().allDevices[uid] != null ? DeviceManager().allDevices[uid]!.name : '无',
+                  onChanged: (value) {
+                    setState(() {
+                      widget.button.explicitAssociatedDeviceUid = value!;
+                    });
+                  },
+                ),
+                Spacer(),
                 // 左翻页按钮
                 IconButton(
                   icon: Icon(Icons.arrow_back, size: 20),
