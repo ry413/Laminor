@@ -4,6 +4,7 @@ import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/commons/common_widgets.dart';
+import 'package:flutter_web_1/uid_manager.dart';
 import 'package:provider/provider.dart';
 
 class BoardInputPage extends StatefulWidget {
@@ -117,18 +118,22 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                           return;
                         }
                         setState(() {
-                          widget.board.inputs.add(
-                            BoardInput(
-                              channel: 1,
-                              level: InputLevel.high,
-                              hostBoardId: widget.board.id,
-                              actionGroups: [
-                                InputActionGroup(
-                                  atomicActions: [],
-                                ),
-                              ],
-                            ),
+                          final input = BoardInput(
+                            channel: 1,
+                            level: InputLevel.high,
+                            hostBoardId: widget.board.id,
+                            actionGroups: [
+                              InputActionGroup(
+                                uid: UidManager().generateActionGroupUid(),
+                                atomicActions: [],
+                              ),
+                            ],
                           );
+                          for (var actionGroup in input.actionGroups) {
+                            actionGroup.parent = input;
+                            ActionGroupManager().addActionGroup(actionGroup);
+                          }
+                          widget.board.inputs.add(input);
                         });
                       },
                     ),
@@ -148,7 +153,7 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                         input: widget.board.inputs[index],
                         onDelete: () {
                           setState(() {
-                            widget.board.inputs.removeAt(index);
+                            widget.board.removeInputAt(index);
                           });
                         },
                       ),
@@ -265,7 +270,7 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   });
                 },
               ),
-              // 添加动作组按钮
+              // 删除通道按钮
               Tooltip(
                 message: '删除通道',
                 child: IconButton(
@@ -316,13 +321,12 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   onPressed: () {
                     setState(() {
                       if (widget.input.actionGroups.length < 4) {
-                        widget.input.actionGroups.add(
-                          InputActionGroup(
-                            atomicActions: [
-                              AtomicAction.defaultAction(),
-                            ],
-                          ),
-                        );
+                        final actionGroup = InputActionGroup(
+                            uid: UidManager().generateActionGroupUid(),
+                            atomicActions: []);
+                        actionGroup.parent = widget.input;
+                        ActionGroupManager().addActionGroup(actionGroup);
+                        widget.input.actionGroups.add(actionGroup);
                         widget.input.currentActionGroupIndex =
                             widget.input.actionGroups.length - 1;
                       }
@@ -343,6 +347,12 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                       ? () {
                           setState(() {
                             // 删除当前动作组
+                            widget
+                                .input
+                                .actionGroups[
+                                    widget.input.currentActionGroupIndex]
+                                .remove();
+                                
                             widget.input.actionGroups
                                 .removeAt(widget.input.currentActionGroupIndex);
 

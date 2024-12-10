@@ -5,6 +5,7 @@ import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
+import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:provider/provider.dart';
 
 class ConfigSection extends StatelessWidget {
@@ -585,6 +586,8 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
 
     final isOtherDevice = device is OtherDevice;
     final isDelayer = isOtherDevice && device.type == OtherDeviceType.delayer;
+    final isActionGroupManager =
+        isOtherDevice && device.type == OtherDeviceType.actionGroup;
 
     List<Widget> children = [
       CustomDropdown<String>(
@@ -641,6 +644,36 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
           ),
         ),
         SectionTitle(title: '秒'),
+      ]);
+    } else if (isActionGroupManager) {
+      int selectedValue = atomicAction.parameter;
+
+      if (!ActionGroupManager().allActionGroups.containsKey(selectedValue)) {
+        selectedValue = ActionGroupManager().allActionGroups.keys.first;
+      }
+
+      children.addAll([
+        CustomDropdown(
+            selectedValue: selectedValue,
+            items: ActionGroupManager().allActionGroups.keys.toList(),
+            itemLabel: (uid) {
+              ActionGroupBase actionGroup =
+                  ActionGroupManager().allActionGroups[uid] ??
+                      ActionGroupManager().allActionGroups.values.first;
+
+              if (actionGroup.runtimeType == PanelButtonActionGroup) {
+                final button = actionGroup.parent as PanelButton;
+                return '面板${button.hostPanel!.id.toString()} 按钮${button.id.toString()}';
+              } else {
+                final input = actionGroup.parent as BoardInput;
+                return '输入通道${input.channel.toString()}';
+              }
+            },
+            onChanged: (uid) {
+              setState(() {
+                atomicAction.parameter = uid!;
+              });
+            })
       ]);
     }
 

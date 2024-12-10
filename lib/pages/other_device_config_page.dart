@@ -136,6 +136,8 @@ class _OtherDeviceWidgetState extends State<OtherDeviceWidget> {
                     widget.device.type = value!;
                     if (widget.device.type == OtherDeviceType.outputControl) {
                       widget.device.output = BoardManager().allOutputs.values.first;
+                    } else {
+                      widget.device.clearOutput();
                     }
                   });
                 }),

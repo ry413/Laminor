@@ -6,7 +6,9 @@ import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 import 'package:provider/provider.dart';
 
-enum OtherDeviceType { outputControl, heartbeatState, delayer }
+// OtherDevice可以是延时者, 动作组管理者, 什么的, 动作组操作也附属给它
+
+enum OtherDeviceType { outputControl, heartbeatState, delayer, actionGroup }
 
 extension OtherDeviceTypeExtension on OtherDeviceType {
   String get displayName {
@@ -17,6 +19,8 @@ extension OtherDeviceTypeExtension on OtherDeviceType {
         return '心跳状态';
       case OtherDeviceType.delayer:
         return '延时器';
+      case OtherDeviceType.actionGroup:
+        return '动作组管理';
     }
   }
 }
@@ -44,12 +48,17 @@ class OtherDevice extends IDeviceBase {
       return _output!;
     }
   }
+
   set output(BoardOutput newOutput) {
     if (_output != null) {
       _output!.removeUsage();
     }
     _output = newOutput;
     _output!.addUsage();
+  }
+
+  void clearOutput() {
+    _output = null;
   }
 
   @override
@@ -60,6 +69,8 @@ class OtherDevice extends IDeviceBase {
       return ['睡眠'];
     } else if (type == OtherDeviceType.delayer) {
       return ['延时'];
+    } else if (type == OtherDeviceType.actionGroup) {
+      return ['销毁'];
     } else {
       return [];
     }

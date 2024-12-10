@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
+import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'panel_config_provider.g.dart';
@@ -38,25 +39,22 @@ extension ButtonOtherPolitActionExtension on ButtonOtherPolitAction {
 }
 
 // 一个按钮的动作组类
-class PanelButtonActionGroup {
-  List<AtomicAction> atomicActions;
+class PanelButtonActionGroup extends ActionGroupBase {
   ButtonPolitAction pressedPolitAction; // 触发此Action后, 对按钮的指示灯的行为
   ButtonOtherPolitAction pressedOtherPolitAction; // 触发此Action后, 对别的按钮指示灯的行为
 
   // 默认构造函数
-  PanelButtonActionGroup(
-      {required this.atomicActions,
-      required this.pressedPolitAction,
-      required this.pressedOtherPolitAction});
-
-  PanelButtonActionGroup.defaultActionGroup()
-      : atomicActions = [AtomicAction.defaultAction()],
-        pressedPolitAction = ButtonPolitAction.ignore,
-        pressedOtherPolitAction = ButtonOtherPolitAction.ignore;
+  PanelButtonActionGroup({
+    required super.uid,
+    required super.atomicActions,
+    required this.pressedPolitAction,
+    required this.pressedOtherPolitAction,
+  });
 
   // 反序列化
   factory PanelButtonActionGroup.fromJson(Map<String, dynamic> json) {
     return PanelButtonActionGroup(
+      uid: json['uid'] as int,
       atomicActions: (json['atomicActions'] as List<dynamic>)
           .map((e) => AtomicAction.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -68,9 +66,10 @@ class PanelButtonActionGroup {
   }
 
   // 序列化
+  @override
   Map<String, dynamic> toJson() {
     return {
-      'atomicActions': atomicActions.map((e) => e.toJson()).toList(),
+      ...super.toJson(),
       'pressedPolitAction': pressedPolitAction.index,
       'pressedOtherPolitAction': pressedOtherPolitAction.index,
     };
@@ -78,36 +77,41 @@ class PanelButtonActionGroup {
 }
 
 // 一个按钮可以有多个[操作], 循环行动
-class PanelButton {
+class PanelButton extends InputBase {
   int id; // 按钮的ID就允许用户随便写, 把这责任给他们
-  List<PanelButtonActionGroup> panelActionGroups;
-
+  Panel? hostPanel;
   int currentActionGroupIndex;
 
   int explicitAssociatedDeviceUid; // 本面板显式关联的设备UID, 会使这个按钮无论如何都会成为此设备的关联按钮
 
   PanelButton(
       {required this.id,
-      required this.panelActionGroups,
+      this.hostPanel,
+      required super.actionGroups,
       this.currentActionGroupIndex = 0,
       this.explicitAssociatedDeviceUid = -1});
 
   // PanelButton的正反序列化
   factory PanelButton.fromJson(Map<String, dynamic> json) {
-    return PanelButton(
+    final button = PanelButton(
         id: (json['id'] as num).toInt(),
-        panelActionGroups: (json['actionGroups'] as List<dynamic>)
+        actionGroups: (json['actionGroups'] as List<dynamic>)
             .map((e) =>
                 PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
             .toList(),
         explicitAssociatedDeviceUid:
             (json['explicitAssociatedDeviceUid'] as num?)?.toInt() ?? -1);
+    for (var actionGroup in button.actionGroups) {
+      ActionGroupManager().addActionGroup(actionGroup);
+      actionGroup.parent = button;
+    }
+    return button;
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'actionGroups': panelActionGroups.map((e) => e.toJson()).toList(),
+      'actionGroups': actionGroups.map((e) => e.toJson()).toList(),
       if (explicitAssociatedDeviceUid != -1)
         'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid
     };
@@ -137,12 +141,18 @@ class Panel {
   });
 
   // Panel的正反序列化
-  factory Panel.fromJson(Map<String, dynamic> json) => _$PanelFromJson(json);
+  factory Panel.fromJson(Map<String, dynamic> json) {
+    final panel = _$PanelFromJson(json);
+    for (var button in panel.buttons) {
+      button.hostPanel = panel;
+    }
+    return panel;
+  }
   Map<String, dynamic> toJson() {
     // 遍历本面板的每个按钮
     for (var button in buttons) {
-      if (button.panelActionGroups.isEmpty) continue;
-      if (button.panelActionGroups.first.atomicActions.isEmpty) continue;
+      if (button.actionGroups.isEmpty) continue;
+      if (button.actionGroups.first.atomicActions.isEmpty) continue;
 
       // 固定把此按钮添加给它可能存在的显式关联的设备
       if (button.explicitAssociatedDeviceUid != -1) {
@@ -154,11 +164,11 @@ class Panel {
 
       // 判断每个按钮它自己所有的Action的deviceUid是否相同(表示是否指向同一个设备)
       final firstDeviceUid =
-          button.panelActionGroups.first.atomicActions.first.deviceUid;
+          button.actionGroups.first.atomicActions.first.deviceUid;
       bool allSameDeviceUid = true;
 
       // 遍历每个actionGroup
-      for (var actionGroup in button.panelActionGroups) {
+      for (var actionGroup in button.actionGroups) {
         // 遍历每个PanelAction的AtomicAction
         for (var atomicAction in actionGroup.atomicActions) {
           // 如果这个AtomicAction是延时, 就不用担心, 跳过它. 这个按钮仍然有可能是关联按钮
@@ -177,7 +187,7 @@ class Panel {
       if (allSameDeviceUid) {
         DeviceManager()
             .allDevices[
-                button.panelActionGroups.first.atomicActions.first.deviceUid]!
+                button.actionGroups.first.atomicActions.first.deviceUid]!
             .addAssociatedButton(
                 AssociatedButton(panelId: id, buttonId: button.id));
 
@@ -215,18 +225,40 @@ class PanelConfigNotifier extends ChangeNotifier {
         buttonCount = 8;
         break;
     }
-    _allPanels
-        .add(Panel(id: _allPanels.length, type: type, name: '未命名 面板', buttons: [
+    final panel =
+        Panel(id: _allPanels.length, type: type, name: '未命名 面板', buttons: [
       for (int i = 0; i < buttonCount; i++) ...[
-        PanelButton(
-            id: i,
-            panelActionGroups: [PanelButtonActionGroup.defaultActionGroup()]),
+        PanelButton(id: i, actionGroups: [
+          PanelButtonActionGroup(
+              uid: UidManager().generateActionGroupUid(),
+              atomicActions: [],
+              pressedPolitAction: ButtonPolitAction.ignore,
+              pressedOtherPolitAction: ButtonOtherPolitAction.ignore)
+        ]),
       ]
-    ]));
+    ]);
+
+    for (var button in panel.buttons) {
+      button.hostPanel = panel;
+
+      for (var actionGroup in button.actionGroups) {
+        actionGroup.parent = button;
+        ActionGroupManager().addActionGroup(actionGroup);
+      }
+    }
+
+    _allPanels.add(panel);
     notifyListeners();
   }
 
+  // 删除面板
   void removeAt(int index) {
+    // 清空面板里所有按钮的所有动作组
+    for (var button in _allPanels[index].buttons) {
+      for (var actionGroup in button.actionGroups) {
+        actionGroup.remove();
+      }
+    }
     _allPanels.removeAt(index);
     notifyListeners();
   }

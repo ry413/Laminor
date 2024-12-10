@@ -1,5 +1,6 @@
 import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/commons/managers.dart';
+import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'interface.g.dart';
@@ -12,7 +13,7 @@ class AtomicAction {
   int deviceUid; // 此操作的目标设备的uid
   String operation; // 操作, 所属于目标设备的operations之中
   int parameter;
-  
+
   // 普通构造函数，使用外部参数
   AtomicAction({
     required this.deviceUid,
@@ -27,9 +28,9 @@ class AtomicAction {
       : deviceUid = DeviceManager().allDevices.values.first.uid,
         operation = DeviceManager().allDevices.values.first.operations.first,
         parameter = 0 {
-          // 既然默认用第一个设备, 也要增加它的引用计数
-          DeviceManager().allDevices.values.first.addUsage();
-        }
+    // 既然默认用第一个设备, 也要增加它的引用计数
+    DeviceManager().allDevices.values.first.addUsage();
+  }
 
   factory AtomicAction.fromJson(Map<String, dynamic> json) =>
       _$AtomicActionFromJson(json);
@@ -87,4 +88,38 @@ class HeartbeatState extends IDeviceBase {
 
   @override
   List<String> get operations => ['睡眠'];
+}
+
+abstract class ActionGroupBase {
+  final int uid;
+  List<AtomicAction> atomicActions;
+
+  InputBase? parent; // 此动作组的宿主输入
+
+  ActionGroupBase(
+      {required this.uid, required this.atomicActions, this.parent});
+
+  void remove() {
+    ActionGroupManager().removeActionGroup(uid);
+  }
+
+  // 序列化方法
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'atomicActions': atomicActions.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  // 反序列化方法，子类需要实现具体的逻辑
+  factory ActionGroupBase.fromJson(Map<String, dynamic> json,
+      ActionGroupBase Function(Map<String, dynamic>) create) {
+    return create(json);
+  }
+}
+
+abstract class InputBase {
+  List<ActionGroupBase> actionGroups;
+
+  InputBase({required this.actionGroups});
 }

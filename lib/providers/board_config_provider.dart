@@ -70,38 +70,32 @@ class BoardOutput with UsageCountMixin {
 }
 
 // 板子输入的动作组类
-class InputActionGroup {
-  List<AtomicAction> atomicActions;
-
-  InputActionGroup({required this.atomicActions});
-  InputActionGroup.defaultActionGroup()
-      : atomicActions = [AtomicAction.defaultAction()];
+class InputActionGroup extends ActionGroupBase {
+  InputActionGroup({
+    required super.uid,
+    required super.atomicActions,
+  });
 
   factory InputActionGroup.fromJson(Map<String, dynamic> json) {
-    return InputActionGroup(
+    final actionGroup = InputActionGroup(
+      uid: json['uid'] as int,
       atomicActions: (json['atomicActions'] as List<dynamic>)
           .map((e) => AtomicAction.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'atomicActions': atomicActions.map((e) => e.toJson()).toList(),
-    };
+    ActionGroupManager().addActionGroup(actionGroup);
+    return actionGroup;
   }
 }
 
 // 板子上的一个输入
 @JsonSerializable()
-class BoardInput {
+class BoardInput extends InputBase {
   int hostBoardId;
   int channel;
 
   @JsonKey(fromJson: _inputLevelFromJson, toJson: _inputLevelToJson)
   InputLevel level;
-
-  List<InputActionGroup> actionGroups; // 添加动作组列表
 
   @JsonKey(includeToJson: false, includeFromJson: false)
   int currentActionGroupIndex; // 当前动作组索引
@@ -110,12 +104,26 @@ class BoardInput {
       {required this.channel,
       required this.level,
       required this.hostBoardId,
-      required this.actionGroups,
+      required super.actionGroups,
       this.currentActionGroupIndex = 0});
 
   // BoardInput的正反序列化
-  factory BoardInput.fromJson(Map<String, dynamic> json) =>
-      _$BoardInputFromJson(json);
+  factory BoardInput.fromJson(Map<String, dynamic> json) {
+    final input = BoardInput(
+      channel: (json['channel'] as num).toInt(),
+      level: BoardInput._inputLevelFromJson((json['level'] as num).toInt()),
+      hostBoardId: (json['hostBoardId'] as num).toInt(),
+      actionGroups: (json['actionGroups'] as List<dynamic>)
+          .map((e) => InputActionGroup.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+    // 将本按钮设置为此动作组的宿主
+    for (var actionGroup in input.actionGroups) {
+      actionGroup.parent = input;
+    }
+    return input;
+  }
   Map<String, dynamic> toJson() => _$BoardInputToJson(this);
 
   // InputLevel的正反序列化
@@ -139,6 +147,11 @@ class BoardConfig {
   });
 
   void removeInputAt(int i) {
+    for (var input in inputs) {
+      for (var actionGroup in input.actionGroups) {
+        actionGroup.remove();
+      }
+    }
     inputs.removeAt(i);
   }
 

@@ -42,13 +42,11 @@ mixin UsageCountMixin {
   
   void addUsage() {
     usageCount++;
-    print(usageCount);
   }
 
   void removeUsage() {
     if (usageCount > 0) {
       usageCount--;
     }
-    print(usageCount);
   }
 }

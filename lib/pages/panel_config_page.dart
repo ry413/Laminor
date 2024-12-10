@@ -3,6 +3,7 @@ import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/commons/common_widgets.dart';
+import 'package:flutter_web_1/uid_manager.dart';
 import 'package:provider/provider.dart';
 
 // 好可怕
@@ -40,7 +41,9 @@ class PanelConfigPageState extends State<PanelConfigPage> {
                 return PanelWidget(
                   panel: panelConfigNotifier.allPanel[index],
                   onDelete: () {
-                    panelConfigNotifier.removeAt(index);
+                    setState(() {
+                      panelConfigNotifier.removeAt(index);
+                    });
                   },
                 );
               },
@@ -258,7 +261,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
   @override
   Widget build(BuildContext context) {
     final currentActionGroup =
-        widget.button.panelActionGroups[widget.button.currentActionGroupIndex];
+        widget.button.actionGroups[widget.button.currentActionGroupIndex];
 
     return Container(
         margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -291,7 +294,9 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 CustomDropdown<int>(
                   selectedValue: widget.button.explicitAssociatedDeviceUid,
                   items: DeviceManager().allDevices.keys.toList(),
-                  itemLabel: (uid) => DeviceManager().allDevices[uid] != null ? DeviceManager().allDevices[uid]!.name : '无',
+                  itemLabel: (uid) => DeviceManager().allDevices[uid] != null
+                      ? DeviceManager().allDevices[uid]!.name
+                      : '无',
                   onChanged: (value) {
                     setState(() {
                       widget.button.explicitAssociatedDeviceUid = value!;
@@ -318,7 +323,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 IconButton(
                   icon: Icon(Icons.arrow_forward, size: 20),
                   onPressed: widget.button.currentActionGroupIndex <
-                          widget.button.panelActionGroups.length - 1
+                          widget.button.actionGroups.length - 1
                       ? () {
                           setState(() {
                             widget.button.currentActionGroupIndex++;
@@ -342,11 +347,19 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                         return;
                       }
                       setState(() {
-                        if (widget.button.panelActionGroups.length < 4) {
-                          widget.button.panelActionGroups
-                              .add(PanelButtonActionGroup.defaultActionGroup());
+                        if (widget.button.actionGroups.length < 4) {
+                          final actionGroup = PanelButtonActionGroup(
+                              uid: UidManager().generateActionGroupUid(),
+                              atomicActions: [],
+                              pressedPolitAction: ButtonPolitAction.ignore,
+                              pressedOtherPolitAction:
+                                  ButtonOtherPolitAction.ignore);
+
+                          actionGroup.parent = widget.button;
+                          ActionGroupManager().addActionGroup(actionGroup);
+                          widget.button.actionGroups.add(actionGroup);
                           widget.button.currentActionGroupIndex =
-                              widget.button.panelActionGroups.length - 1;
+                              widget.button.actionGroups.length - 1;
                         }
                       });
                     },
@@ -361,18 +374,25 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                       size: 24,
                       color: Colors.red, // 设置删除按钮为红色，突出显示
                     ),
-                    onPressed: widget.button.panelActionGroups.length > 1
+                    onPressed: widget.button.actionGroups.length > 1
                         ? () {
                             setState(() {
                               // 删除当前动作组
-                              widget.button.panelActionGroups.removeAt(
+                              // 从Manager里删除
+                              widget
+                                  .button
+                                  .actionGroups[
+                                      widget.button.currentActionGroupIndex]
+                                  .remove();
+                              // 从动作组列表里删除
+                              widget.button.actionGroups.removeAt(
                                   widget.button.currentActionGroupIndex);
 
                               // 调整 currentActionGroupIndex
                               if (widget.button.currentActionGroupIndex >=
-                                  widget.button.panelActionGroups.length) {
+                                  widget.button.actionGroups.length) {
                                 widget.button.currentActionGroupIndex =
-                                    widget.button.panelActionGroups.length - 1;
+                                    widget.button.actionGroups.length - 1;
                               }
                             });
                           }
@@ -387,14 +407,13 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                   (index) => AtomicActionRowWidget(
                       atomicAction: widget
                           .button
-                          .panelActionGroups[
-                              widget.button.currentActionGroupIndex]
+                          .actionGroups[widget.button.currentActionGroupIndex]
                           .atomicActions[index],
                       onDelete: () => {
                             setState(() {
                               widget
                                   .button
-                                  .panelActionGroups[
+                                  .actionGroups[
                                       widget.button.currentActionGroupIndex]
                                   .atomicActions
                                   .removeAt(index);
@@ -410,19 +429,17 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     Text('执行完成后将本指示灯'),
                     // SectionTitle(title: '执行完成后将本指示灯'),
                     CustomDropdown<ButtonPolitAction>(
-                      selectedValue: widget
-                          .button
-                          .panelActionGroups[
-                              widget.button.currentActionGroupIndex]
+                      selectedValue: (widget.button.actionGroups[
+                                  widget.button.currentActionGroupIndex]
+                              as PanelButtonActionGroup)
                           .pressedPolitAction,
                       items: ButtonPolitAction.values,
                       itemLabel: (item) => item.displayName,
                       onChanged: (value) {
                         setState(() {
-                          widget
-                              .button
-                              .panelActionGroups[
-                                  widget.button.currentActionGroupIndex]
+                          (widget.button.actionGroups[
+                                      widget.button.currentActionGroupIndex]
+                                  as PanelButtonActionGroup)
                               .pressedPolitAction = value!;
                         });
                       },
@@ -436,19 +453,17 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     Text('将同面板其他指示灯'),
                     // SectionTitle(title: '将同面板其他指示灯'),
                     CustomDropdown<ButtonOtherPolitAction>(
-                      selectedValue: widget
-                          .button
-                          .panelActionGroups[
-                              widget.button.currentActionGroupIndex]
+                      selectedValue: (widget.button.actionGroups[
+                                  widget.button.currentActionGroupIndex]
+                              as PanelButtonActionGroup)
                           .pressedOtherPolitAction,
                       items: ButtonOtherPolitAction.values,
                       itemLabel: (item) => item.displayName,
                       onChanged: (value) {
                         setState(() {
-                          widget
-                              .button
-                              .panelActionGroups[
-                                  widget.button.currentActionGroupIndex]
+                          (widget.button.actionGroups[
+                                      widget.button.currentActionGroupIndex]
+                                  as PanelButtonActionGroup)
                               .pressedOtherPolitAction = value!;
                         });
                       },
@@ -456,6 +471,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                   ],
                 ),
                 Spacer(),
+                // 添加动作按钮
                 Tooltip(
                   message: '',
                   child: IconButton(

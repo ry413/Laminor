@@ -49,8 +49,15 @@ class BoardManager {
       channel: 127,
       level: InputLevel.low,
       hostBoardId: boardId,
-      actionGroups: [InputActionGroup.defaultActionGroup()],
+      actionGroups: [
+        InputActionGroup(
+            uid: UidManager().generateActionGroupUid(), atomicActions: [])
+      ],
     );
+    for (var actionGroup in newInput.actionGroups) {
+      actionGroup.parent = newInput;
+      ActionGroupManager().addActionGroup(actionGroup);
+    }
     board.inputs.add(newInput);
   }
 
@@ -90,4 +97,24 @@ class DeviceManager {
 
   Iterable<T> getDevices<T extends IDeviceBase>() =>
       _allDevices.values.whereType<T>();
+}
+
+// 管理所有动作组
+class ActionGroupManager {
+  static final ActionGroupManager _instance = ActionGroupManager._internal();
+  factory ActionGroupManager() => _instance;
+
+  ActionGroupManager._internal();
+
+  final Map<int, ActionGroupBase> _allActionGroups = {};
+
+  Map<int, ActionGroupBase> get allActionGroups => _allActionGroups;
+
+  void addActionGroup(ActionGroupBase actionGroup) {
+    _allActionGroups[actionGroup.uid] = actionGroup;
+  }
+
+  void removeActionGroup(int uid) {
+    _allActionGroups.remove(uid);
+  }
 }

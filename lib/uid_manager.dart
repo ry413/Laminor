@@ -2,15 +2,14 @@ import 'dart:math';
 
 class UidManager {
   // 各类型的自增值
-  int _outputUid = 1;
+  int _outputUid = 0;
 
   int _deviceUid = 0;       // 所有Device用同一个uid计数
 
   int _airConUid = 1;
-  int _curtainUid = 1;
-  int _actionGroupUid = 1;
 
-  int _rs485CommandUid = 1;
+  int _actionGroup = 0;
+
 
   // 单例模式
   static final UidManager _instance = UidManager._internal();
@@ -24,7 +23,7 @@ class UidManager {
 
   // 输出通道
   int generateOutputUid() {
-    return _outputUid++;
+    return ++_outputUid;
   }
   void setOutputUid(int uid) {
     _outputUid = uid;
@@ -39,7 +38,6 @@ class UidManager {
   }
 
 
-
   void resetDeviceUid() {
     _deviceUid = 0;
   }
@@ -50,12 +48,13 @@ class UidManager {
     _deviceUid = max(uid, _deviceUid);
   }
 
-  // 485指令码
-  int generateRS485CommandUid() {
-    return _rs485CommandUid++;
+  // 动作组uid
+  int generateActionGroupUid() {
+    return ++_actionGroup;
   }
-  void setRS485CommandUid(int uid) {
-    _rs485CommandUid = uid;
+  void setActionGroupUid(int uid) {
+    _actionGroup = uid;
   }
+
 
 }
