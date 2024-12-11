@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -21,6 +22,9 @@ import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:provider/provider.dart';
 import 'web_export_stub.dart' if (dart.library.html) 'web_export.dart';
+
+String ipAddress = '192.168.2.3';
+int port = 8080;
 
 void main() {
   runApp(
@@ -246,11 +250,29 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
+      // 远程获取
+      if (!kIsWeb)
+        InkWell(
+          canRequestFocus: false,
+          onTap: () {
+            getRCUConfig();
+          },
+          child: Row(
+            children: [
+              SizedBox(width: 12),
+              Icon(Icons.cloud_download),
+              SizedBox(width: 6),
+              Text('获取远程配置'),
+              SizedBox(width: 40, height: 40),
+            ],
+          ),
+        ),
+
       // 上传json
       InkWell(
         canRequestFocus: false,
         onTap: () {
-          uploadAndParseJsonDesktop(context);
+          uploadAndParseJsonDesktop();
         },
         child: Row(
           children: [
@@ -462,19 +484,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> generateAndSendJson() async {
     String jsonStr = jsonEncode(generateJson());
-    sendJsonOverTcp(jsonStr, '192.168.2.3', 8080);
+    sendJsonOverTcp(jsonStr, ipAddress, port);
   }
 
   // 将 JSON 字符串通过 TCP 发送
-  Future<void> sendJsonOverTcp(
-      String jsonStr, String ipAddress, int port) async {
+  Future<void> sendJsonOverTcp(String str, String ipAddress, int port) async {
     try {
       // 连接到指定的 TCP 服务器
       Socket socket = await Socket.connect(ipAddress, port);
       print('已连接到 $ipAddress:$port');
 
-      // 将 JSON 字符串转换为字节，并发送
-      socket.write(jsonStr);
+      // 发送数据
+      socket.write(str);
 
       // 监听服务器的响应（可选）
       socket.listen(
@@ -499,8 +520,44 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> uploadAndParseJsonDesktop(BuildContext context) async {
-    // 使用 FilePicker 打开文件选择对话框
+  Future<String> fetchFileFromDevice(String ipAddress, int port) async {
+    Socket socket = await Socket.connect(ipAddress, port);
+    print('已连接到: ${socket.remoteAddress.address}:${socket.remotePort}');
+
+    socket.writeln('GET_FILE');
+    await socket.flush();
+
+    const endMarker = '\nEND_OF_JSON\n';
+    StringBuffer buffer = StringBuffer();
+    Completer<String> completer = Completer<String>();
+
+    // 使用 transform 将字节流转换为 UTF-8 字符流
+    socket.listen((data) {
+      buffer.write(utf8.decode(data, allowMalformed: true)); // 逐块解码
+      if (buffer.toString().contains(endMarker)) {
+        String fullData = buffer.toString();
+        int endIndex = fullData.indexOf(endMarker);
+        String jsonData = fullData.substring(0, endIndex);
+
+        if (!completer.isCompleted) {
+          completer.complete(jsonData);
+        }
+        socket.destroy();
+      }
+    }, onError: (error) {
+      if (!completer.isCompleted) completer.completeError(error);
+      socket.destroy();
+    }, onDone: () {
+      if (!completer.isCompleted) {
+        completer.completeError('未接收到END_OF_JSON标记，连接已关闭');
+      }
+      socket.destroy();
+    });
+
+    return completer.future;
+  }
+
+  Future<void> uploadAndParseJsonDesktop() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['json'], // 限制只选择 JSON 文件
@@ -510,89 +567,109 @@ class _MyHomePageState extends State<MyHomePage> {
       final filePath = result.files.single.path!;
       try {
         final jsonString = await File(filePath).readAsString();
-        final Map<String, dynamic> jsonData = jsonDecode(jsonString);
-
-        DeviceManager().clear();
-
-        // 解析 JSON 数据并更新对应的配置
-        final boardConfigNotifier =
-            Provider.of<BoardConfigNotifier>(context, listen: false);
-        // 这里不会反序列化inputs, 而是到设备们反序列化完了才到它
-        final newBoards = (jsonData['板子列表'] as List)
-            .map((item) => BoardConfig.fromJson(item))
-            .toList();
-        boardConfigNotifier.deserializationUpdate(newBoards);
-
-        final lampConfigNotifier =
-            Provider.of<LampNotifier>(context, listen: false);
-        final newLamps = (jsonData['灯列表'] as List)
-            .map((item) => Lamp.fromJson(item))
-            .toList();
-        lampConfigNotifier.deserializationUpdate(newLamps);
-
-        final acConfigNotifier =
-            Provider.of<AirConNotifier>(context, listen: false);
-        acConfigNotifier.fromJson(jsonData['空调通用配置']);
-        final newAirCons = (jsonData['空调列表'] as List)
-            .map((item) => AirCon.fromJson(item))
-            .toList();
-        acConfigNotifier.deserializationUpdate(newAirCons);
-
-        final curtainConfigNotifier =
-            Provider.of<CurtainNotifier>(context, listen: false);
-        final newCurtains = (jsonData['窗帘列表'] as List)
-            .map((item) => Curtain.fromJson(item))
-            .toList();
-        curtainConfigNotifier.deserializationUpdate(newCurtains);
-
-        final otherDeviceNotifier =
-            Provider.of<OtherDeviceNotifier>(context, listen: false);
-        final newOtherDevice = (jsonData['其他设备列表'] as List)
-            .map((item) => OtherDevice.fromJson(item))
-            .toList();
-        otherDeviceNotifier.deserializationUpdate(newOtherDevice);
-
-        final rs485CommandNotifier =
-            Provider.of<RS485ConfigNotifier>(context, listen: false);
-        final newCommands = (jsonData['485指令码列表'] as List)
-            .map((item) => RS485Command.fromJson(item))
-            .toList();
-        rs485CommandNotifier.deserializationUpdate(newCommands);
-
-        // 到这里再解析inputs
-        final boardListJson = (jsonData['板子列表'] as List);
-        for (int i = 0; i < newBoards.length; i++) {
-          final boardJson = boardListJson[i] as Map<String, dynamic>;
-          newBoards[i].loadInputsFromJson(boardJson['inputs'] as List<dynamic>);
-        }
-
-        final panelConfigNotifier =
-            Provider.of<PanelConfigNotifier>(context, listen: false);
-        final newPanels = (jsonData['面板列表'] as List)
-            .map((item) => Panel.fromJson(item))
-            .toList();
-        panelConfigNotifier.deserializationUpdate(newPanels);
-
-        // 提示用户上传成功
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("JSON 文件上传并解析成功"),
-            duration: Duration(seconds: 1),
-          ),
-        );
+        await parseJsonString(jsonString);
       } catch (e) {
-        // 提示解析错误
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("解析 JSON 文件失败: $e"),
+          content: Text("读取 JSON 文件失败: $e"),
           duration: Duration(seconds: 1),
         ));
       }
     } else {
-      // 用户取消选择文件
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("未选择任何文件"),
         duration: Duration(seconds: 1),
       ));
+    }
+  }
+
+  Future<void> parseJsonString(String jsonString) async {
+    try {
+      // 解析 JSON 字符串
+      final Map<String, dynamic> jsonData = jsonDecode(jsonString);
+
+      DeviceManager().clear();
+
+      // 解析 JSON 数据并更新对应的配置
+      final boardConfigNotifier =
+          Provider.of<BoardConfigNotifier>(context, listen: false);
+      // 这里不会反序列化inputs, 而是到设备们反序列化完了才到它
+      final newBoards = (jsonData['板子列表'] as List)
+          .map((item) => BoardConfig.fromJson(item))
+          .toList();
+      boardConfigNotifier.deserializationUpdate(newBoards);
+
+      final lampConfigNotifier =
+          Provider.of<LampNotifier>(context, listen: false);
+      final newLamps =
+          (jsonData['灯列表'] as List).map((item) => Lamp.fromJson(item)).toList();
+      lampConfigNotifier.deserializationUpdate(newLamps);
+
+      final acConfigNotifier =
+          Provider.of<AirConNotifier>(context, listen: false);
+      acConfigNotifier.fromJson(jsonData['空调通用配置']);
+      final newAirCons = (jsonData['空调列表'] as List)
+          .map((item) => AirCon.fromJson(item))
+          .toList();
+      acConfigNotifier.deserializationUpdate(newAirCons);
+
+      final curtainConfigNotifier =
+          Provider.of<CurtainNotifier>(context, listen: false);
+      final newCurtains = (jsonData['窗帘列表'] as List)
+          .map((item) => Curtain.fromJson(item))
+          .toList();
+      curtainConfigNotifier.deserializationUpdate(newCurtains);
+
+      final otherDeviceNotifier =
+          Provider.of<OtherDeviceNotifier>(context, listen: false);
+      final newOtherDevice = (jsonData['其他设备列表'] as List)
+          .map((item) => OtherDevice.fromJson(item))
+          .toList();
+      otherDeviceNotifier.deserializationUpdate(newOtherDevice);
+
+      final rs485CommandNotifier =
+          Provider.of<RS485ConfigNotifier>(context, listen: false);
+      final newCommands = (jsonData['485指令码列表'] as List)
+          .map((item) => RS485Command.fromJson(item))
+          .toList();
+      rs485CommandNotifier.deserializationUpdate(newCommands);
+
+      // 到这里再解析inputs
+      final boardListJson = (jsonData['板子列表'] as List);
+      for (int i = 0; i < newBoards.length; i++) {
+        final boardJson = boardListJson[i] as Map<String, dynamic>;
+        newBoards[i].loadInputsFromJson(boardJson['inputs'] as List<dynamic>);
+      }
+
+      final panelConfigNotifier =
+          Provider.of<PanelConfigNotifier>(context, listen: false);
+      final newPanels = (jsonData['面板列表'] as List)
+          .map((item) => Panel.fromJson(item))
+          .toList();
+      panelConfigNotifier.deserializationUpdate(newPanels);
+
+      // 提示用户解析成功
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("JSON 数据解析成功"),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      // 提示解析错误
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("解析 JSON 数据失败: $e"),
+        duration: Duration(seconds: 1),
+      ));
+    }
+  }
+
+  Future<void> getRCUConfig() async {
+    try {
+      String jsonStr = await fetchFileFromDevice(ipAddress, port);
+      print(jsonStr);
+      parseJsonString(jsonStr);
+    } catch (e) {
+      print('获取配置失败: $e');
     }
   }
 }
