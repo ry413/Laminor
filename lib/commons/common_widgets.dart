@@ -546,6 +546,8 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
 
           // 重置操作
           atomicAction.operation = device.operations.first;
+          // 重置参数
+          atomicAction.parameter = "";
         });
       },
       itemStyleBuilder: (device, isSelected, isHovered) {
@@ -581,14 +583,6 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
     final device = DeviceManager().allDevices[atomicAction.deviceUid];
     if (device == null) return SizedBox.shrink();
 
-    final isLamp = device is Lamp;
-    final isDimmable = isLamp && device.type == LampType.dimmableLight;
-
-    final isOtherDevice = device is OtherDevice;
-    final isDelayer = isOtherDevice && device.type == OtherDeviceType.delayer;
-    final isActionGroupManager =
-        isOtherDevice && device.type == OtherDeviceType.actionGroup;
-
     List<Widget> children = [
       CustomDropdown<String>(
         selectedValue: atomicAction.operation,
@@ -602,21 +596,24 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
       ),
     ];
 
-    if (isDimmable) {
+    if (device is Lamp && device.type == LampType.dimmableLight) {
       children.addAll([
         SectionTitle(title: '至'),
         CustomDropdown<int>(
-          selectedValue: atomicAction.parameter,
+          selectedValue: atomicAction.parameter.isNotEmpty
+              ? int.parse(atomicAction.parameter)
+              : 0,
           items: List.generate(11, (i) => i),
           itemLabel: (value) => '${value * 10}%',
           onChanged: (value) {
             setState(() {
-              atomicAction.parameter = value!;
+              atomicAction.parameter = value.toString();
             });
           },
         ),
       ]);
-    } else if (isDelayer) {
+    } else if (device is OtherDevice &&
+        device.type == OtherDeviceType.delayer) {
       children.addAll([
         IntrinsicWidth(
           child: TextField(
@@ -633,20 +630,18 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
               setState(() {
-                // 当用户输入为空时，我们默认为0秒
-                if (value.isEmpty) {
-                  atomicAction.parameter = 0;
-                } else {
-                  atomicAction.parameter = int.parse(value);
-                }
+                atomicAction.parameter = value;
               });
             },
           ),
         ),
         SectionTitle(title: '秒'),
       ]);
-    } else if (isActionGroupManager) {
-      int selectedValue = atomicAction.parameter;
+    } else if (device is OtherDevice &&
+        device.type == OtherDeviceType.actionGroup) {
+      int selectedValue = atomicAction.parameter.isNotEmpty
+          ? int.parse(atomicAction.parameter)
+          : 0;
 
       if (!ActionGroupManager().allActionGroups.containsKey(selectedValue)) {
         selectedValue = ActionGroupManager().allActionGroups.keys.first;
@@ -671,12 +666,100 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
             },
             onChanged: (uid) {
               setState(() {
-                atomicAction.parameter = uid!;
+                atomicAction.parameter = uid.toString();
               });
             })
+      ]);
+    } else if (device is OtherDevice &&
+        device.type == OtherDeviceType.stateSetter) {
+      children.addAll([
+        IntrinsicWidth(
+          child: TextField(
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4.0),
+                borderSide: BorderSide(width: 1, color: Colors.brown),
+              ),
+            ),
+            controller: _delayController,
+            onChanged: (value) {
+              setState(() {
+                atomicAction.parameter = value;
+              });
+            },
+          ),
+        ),
+        // SectionTitle(title: '秒'),
       ]);
     }
 
     return Row(children: children);
+  }
+}
+
+class ScenarioCheckbox extends StatefulWidget {
+  final String value; // 初始模式名称
+  final Function(String)? onChange; // 模式名称变化回调
+
+  const ScenarioCheckbox({
+    super.key,
+    this.value = '',
+    this.onChange,
+  });
+
+  @override
+  ScenarioCheckboxState createState() => ScenarioCheckboxState();
+}
+
+class ScenarioCheckboxState extends State<ScenarioCheckbox> {
+  late TextEditingController _controller; // 输入框控制器
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value); // 初始化控制器
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // 释放控制器
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 120),
+            child: TextField(
+              controller: _controller, // 绑定控制器
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4.0),
+                  borderSide: BorderSide(width: 1, color: Colors.brown),
+                ),
+                labelText: '进入模式',
+                hintText: '留空则禁用',
+              ),
+              onChanged: (value) {
+                // 回调通知模式名称变化
+                if (widget.onChange != null) {
+                  widget.onChange!(value);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

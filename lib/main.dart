@@ -9,6 +9,7 @@ import 'package:flutter_web_1/pages/air_config_page.dart';
 import 'package:flutter_web_1/pages/board_input_page.dart';
 import 'package:flutter_web_1/pages/board_output_page.dart';
 import 'package:flutter_web_1/pages/curtain_config_page.dart';
+import 'package:flutter_web_1/pages/home_config_page.dart';
 import 'package:flutter_web_1/pages/lamp_config_page.dart';
 import 'package:flutter_web_1/pages/other_device_config_page.dart';
 import 'package:flutter_web_1/pages/panel_config_page.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_web_1/pages/rs485_config_page.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/curtain_config_provider.dart';
+import 'package:flutter_web_1/providers/home_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
@@ -23,13 +25,16 @@ import 'package:flutter_web_1/providers/rs485_config_provider.dart';
 import 'package:provider/provider.dart';
 import 'web_export_stub.dart' if (dart.library.html) 'web_export.dart';
 
-String ipAddress = '192.168.2.3';
+String ipAddress = '192.168.2.36';
 int port = 8080;
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (context) => HomePageNotifier(),
+        ),
         ChangeNotifierProvider(
           create: (context) => BoardConfigNotifier(),
         ),
@@ -390,7 +395,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildPageContent() {
     switch (_selectedIndex) {
       case indexHomePage:
-        return Placeholder();
+        return HomeConfigPage();
       case indexBoardOutputPage:
         return BoardOutputPage();
       case indexAirConPage:
@@ -413,6 +418,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Map<String, dynamic> generateJson() {
+    final homeConfigNotifier =
+        Provider.of<HomePageNotifier>(context, listen: false);
     final boardConfigNotifier =
         Provider.of<BoardConfigNotifier>(context, listen: false);
     final lampConfigNotifier =
@@ -434,6 +441,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     Map<String, dynamic> fullConfig = {
+      '一般配置': homeConfigNotifier.toJson(),
       '板子列表':
           boardConfigNotifier.allBoard.map((board) => board.toJson()).toList(),
       // 必须先序列化面板, 然后再到各种设备
@@ -590,6 +598,11 @@ class _MyHomePageState extends State<MyHomePage> {
       DeviceManager().clear();
 
       // 解析 JSON 数据并更新对应的配置
+
+      final homeConfigNotifier =
+          Provider.of<HomePageNotifier>(context, listen: false);
+      homeConfigNotifier.fromJson(jsonData['一般配置']);
+
       final boardConfigNotifier =
           Provider.of<BoardConfigNotifier>(context, listen: false);
       // 这里不会反序列化inputs, 而是到设备们反序列化完了才到它

@@ -95,52 +95,8 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
             borderRadius: BorderRadius.circular(12.0), // 设置圆角
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // 添加通道按钮
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Tooltip(
-                    message: '添加通道',
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.add_circle,
-                        size: 24,
-                      ),
-                      onPressed: () {
-                        if (DeviceManager().allDevices.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('请先添加设备'),
-                                duration: Duration(seconds: 1)),
-                          );
-                          return;
-                        }
-                        setState(() {
-                          final input = BoardInput(
-                            channel: 1,
-                            level: InputLevel.high,
-                            hostBoardId: widget.board.id,
-                            actionGroups: [
-                              InputActionGroup(
-                                uid: UidManager().generateActionGroupUid(),
-                                atomicActions: [],
-                              ),
-                            ],
-                          );
-                          for (var actionGroup in input.actionGroups) {
-                            actionGroup.parent = input;
-                            ActionGroupManager().addActionGroup(actionGroup);
-                          }
-                          widget.board.inputs.add(input);
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 1, thickness: 1),
               // 通道列表
               ListView.builder(
                 shrinkWrap: true,
@@ -162,6 +118,44 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                     ],
                   );
                 },
+              ),
+              // 添加通道按钮
+              Tooltip(
+                message: '添加通道',
+                child: IconButton(
+                  icon: Icon(
+                    Icons.add_circle,
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    if (DeviceManager().allDevices.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('请先添加设备'),
+                            duration: Duration(seconds: 1)),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      final input = BoardInput(
+                        channel: 1,
+                        level: InputLevel.high,
+                        hostBoardId: widget.board.id,
+                        actionGroups: [
+                          InputActionGroup(
+                            uid: UidManager().generateActionGroupUid(),
+                            atomicActions: [],
+                          ),
+                        ],
+                      );
+                      for (var actionGroup in input.actionGroups) {
+                        actionGroup.parent = input;
+                        ActionGroupManager().addActionGroup(actionGroup);
+                      }
+                      widget.board.inputs.add(input);
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -281,6 +275,14 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   onPressed: () => widget.onDelete(),
                 ),
               ),
+              ScenarioCheckbox(
+                value: widget.input.modeName ?? '',
+                onChange: (name) {
+                  setState(() {
+                    widget.input.modeName = name;
+                  });
+                },
+              ),
               Spacer(),
               // 左翻页按钮
               IconButton(
@@ -352,7 +354,7 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                                 .actionGroups[
                                     widget.input.currentActionGroupIndex]
                                 .remove();
-                                
+
                             widget.input.actionGroups
                                 .removeAt(widget.input.currentActionGroupIndex);
 

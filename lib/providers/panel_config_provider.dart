@@ -81,7 +81,6 @@ class PanelButton extends InputBase {
   int id; // 按钮的ID就允许用户随便写, 把这责任给他们
   Panel? hostPanel;
   int currentActionGroupIndex;
-
   int explicitAssociatedDeviceUid; // 本面板显式关联的设备UID, 会使这个按钮无论如何都会成为此设备的关联按钮
 
   PanelButton(
@@ -94,13 +93,15 @@ class PanelButton extends InputBase {
   // PanelButton的正反序列化
   factory PanelButton.fromJson(Map<String, dynamic> json) {
     final button = PanelButton(
-        id: (json['id'] as num).toInt(),
-        actionGroups: (json['actionGroups'] as List<dynamic>)
-            .map((e) =>
-                PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        explicitAssociatedDeviceUid:
-            (json['explicitAssociatedDeviceUid'] as num?)?.toInt() ?? -1);
+      id: (json['id'] as num).toInt(),
+      actionGroups: (json['actionGroups'] as List<dynamic>)
+          .map(
+              (e) => PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      explicitAssociatedDeviceUid:
+          (json['explicitAssociatedDeviceUid'] as num?)?.toInt() ?? -1,
+    );
+    button.modeName = json['modeName'] as String?;
     for (var actionGroup in button.actionGroups) {
       ActionGroupManager().addActionGroup(actionGroup);
       actionGroup.parent = button;
@@ -113,7 +114,8 @@ class PanelButton extends InputBase {
       'id': id,
       'actionGroups': actionGroups.map((e) => e.toJson()).toList(),
       if (explicitAssociatedDeviceUid != -1)
-        'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid
+        'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid,
+      if (modeName != null && modeName != '') 'modeName': modeName,
     };
   }
 }

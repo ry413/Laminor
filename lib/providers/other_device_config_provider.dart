@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 // OtherDevice可以是延时者, 动作组管理者, 什么的, 动作组操作也附属给它
 
-enum OtherDeviceType { outputControl, heartbeatState, delayer, actionGroup }
+enum OtherDeviceType { outputControl, heartbeatState, delayer, actionGroup, stateSetter }
 
 extension OtherDeviceTypeExtension on OtherDeviceType {
   String get displayName {
@@ -21,6 +21,8 @@ extension OtherDeviceTypeExtension on OtherDeviceType {
         return '延时器';
       case OtherDeviceType.actionGroup:
         return '动作组管理';
+      case OtherDeviceType.stateSetter:
+        return '状态更改';
     }
   }
 }
@@ -71,6 +73,8 @@ class OtherDevice extends IDeviceBase {
       return ['延时'];
     } else if (type == OtherDeviceType.actionGroup) {
       return ['销毁'];
+    } else if (type == OtherDeviceType.stateSetter) {
+      return ['设置状态为', '清除状态', '反转状态'];
     } else {
       return [];
     }

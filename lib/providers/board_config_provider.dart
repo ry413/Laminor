@@ -117,6 +117,7 @@ class BoardInput extends InputBase {
           .map((e) => InputActionGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+    input.modeName = json['modeName'] as String?;
 
     // 将本按钮设置为此动作组的宿主
     for (var actionGroup in input.actionGroups) {
@@ -124,7 +125,15 @@ class BoardInput extends InputBase {
     }
     return input;
   }
-  Map<String, dynamic> toJson() => _$BoardInputToJson(this);
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'hostBoardId': hostBoardId,
+      'channel': channel,
+      'level': BoardInput._inputLevelToJson(level),
+      'actionGroups': actionGroups,
+      if (modeName != null && modeName != '') 'modeName': modeName
+    };
+  }
 
   // InputLevel的正反序列化
   static InputLevel _inputLevelFromJson(int index) => InputLevel.values[index];

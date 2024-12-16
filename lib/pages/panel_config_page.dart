@@ -290,7 +290,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                         });
                       }),
                 ),
-                Text('显式关联于'),
+                Text('指示灯受控于'),
                 CustomDropdown<int>(
                   selectedValue: widget.button.explicitAssociatedDeviceUid,
                   items: DeviceManager().allDevices.keys.toList(),
@@ -300,6 +300,14 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                   onChanged: (value) {
                     setState(() {
                       widget.button.explicitAssociatedDeviceUid = value!;
+                    });
+                  },
+                ),
+                ScenarioCheckbox(
+                  value: widget.button.modeName ?? '',
+                  onChange: (name) {
+                    setState(() {
+                      widget.button.modeName = name;
                     });
                   },
                 ),

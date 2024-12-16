@@ -12,7 +12,7 @@ part 'interface.g.dart';
 class AtomicAction {
   int deviceUid; // 此操作的目标设备的uid
   String operation; // 操作, 所属于目标设备的operations之中
-  int parameter;
+  String parameter; // 参数, 有什么是字符串不能表示的呢
 
   // 普通构造函数，使用外部参数
   AtomicAction({
@@ -27,7 +27,7 @@ class AtomicAction {
   AtomicAction.defaultAction()
       : deviceUid = DeviceManager().allDevices.values.first.uid,
         operation = DeviceManager().allDevices.values.first.operations.first,
-        parameter = 0 {
+        parameter = "" {
     // 既然默认用第一个设备, 也要增加它的引用计数
     DeviceManager().allDevices.values.first.addUsage();
   }
@@ -120,6 +120,7 @@ abstract class ActionGroupBase {
 
 abstract class InputBase {
   List<ActionGroupBase> actionGroups;
+  String? modeName; // 输入有可能被设定为情景模式, 这个是名字
 
   InputBase({required this.actionGroups});
 }
