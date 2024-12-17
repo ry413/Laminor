@@ -5,6 +5,8 @@ class HomePageNotifier extends ChangeNotifier {
   String _hotelName = '';
   String _roomName = '';
 
+  List<String> scannedIPs = [];
+
   // Getters
   String get configVersion => _configVersion;
   String get hotelName => _hotelName;
@@ -30,6 +32,20 @@ class HomePageNotifier extends ChangeNotifier {
       _roomName = value;
       notifyListeners();
     }
+  }
+  
+  // 添加IP地址
+  void addScannedIP(String ip) {
+    if (!scannedIPs.contains(ip)) {
+      scannedIPs.add(ip);
+      notifyListeners(); // 通知监听者更新
+    }
+  }
+
+  // 清空IP列表
+  void clearScannedIPs() {
+    scannedIPs.clear();
+    notifyListeners();
   }
 
   // 从 JSON 加载数据
