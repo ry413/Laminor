@@ -8,7 +8,13 @@ import 'package:provider/provider.dart';
 
 // OtherDevice可以是延时者, 动作组管理者, 什么的, 动作组操作也附属给它
 
-enum OtherDeviceType { outputControl, heartbeatState, delayer, actionGroup, stateSetter }
+enum OtherDeviceType {
+  outputControl,
+  heartbeatState,
+  delayer,
+  actionGroup,
+  stateSetter
+}
 
 extension OtherDeviceTypeExtension on OtherDeviceType {
   String get displayName {
@@ -31,12 +37,15 @@ class OtherDevice extends IDeviceBase {
   OtherDeviceType type;
   BoardOutput? _output;
 
-  OtherDevice({
-    required super.name,
-    required super.uid,
-    required this.type,
-    BoardOutput? output,
-  }) : _output = output {
+  OtherDevice(
+      {required this.type,
+      BoardOutput? output,
+      required super.name,
+      required super.uid,
+      super.causeState,
+      // super.linkDeviceUids,
+      super.repelDeviceUids})
+      : _output = output {
     if (_output != null) {
       _output!.addUsage();
     }
@@ -85,6 +94,15 @@ class OtherDevice extends IDeviceBase {
       name: json['name'] as String,
       uid: (json['uid'] as num).toInt(),
       type: OtherDeviceType.values[json['type'] as int],
+      causeState: json['causeState'] as String? ?? '',
+      // linkDeviceUids: (json['linkDeviceUids'] as List<dynamic>?)
+      //         ?.map((item) => (item as num).toInt())
+      //         .toList() ??
+      //     [],
+      repelDeviceUids: (json['repelDeviceUids'] as List<dynamic>?)
+              ?.map((item) => (item as num).toInt())
+              .toList() ??
+          [],
     );
 
     if (json.containsKey('outputUid') && json['outputUid'] != null) {

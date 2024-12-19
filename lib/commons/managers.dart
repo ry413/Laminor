@@ -95,11 +95,15 @@ class DeviceManager {
     _allDevices.clear();
   }
 
+  IDeviceBase? getDeviceByUid(int uid) {
+    return _allDevices[uid];
+  }
+
   Iterable<T> getDevices<T extends IDeviceBase>() =>
       _allDevices.values.whereType<T>();
 }
 
-// 管理所有动作组
+// 管理所有动作组   // VoiceActionGroup是不放在这里面的, 太可怕了
 class ActionGroupManager {
   static final ActionGroupManager _instance = ActionGroupManager._internal();
   factory ActionGroupManager() => _instance;

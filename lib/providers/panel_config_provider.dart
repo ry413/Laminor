@@ -79,12 +79,14 @@ class PanelButtonActionGroup extends ActionGroupBase {
 // 一个按钮可以有多个[操作], 循环行动
 class PanelButton extends InputBase {
   int id; // 按钮的ID就允许用户随便写, 把这责任给他们
+  String name;
   Panel? hostPanel;
   int currentActionGroupIndex;
   int explicitAssociatedDeviceUid; // 本面板显式关联的设备UID, 会使这个按钮无论如何都会成为此设备的关联按钮
 
   PanelButton(
       {required this.id,
+      required this.name,
       this.hostPanel,
       required super.actionGroups,
       this.currentActionGroupIndex = 0,
@@ -94,6 +96,7 @@ class PanelButton extends InputBase {
   factory PanelButton.fromJson(Map<String, dynamic> json) {
     final button = PanelButton(
       id: (json['id'] as num).toInt(),
+      name: json['name'] as String? ?? '',
       actionGroups: (json['actionGroups'] as List<dynamic>)
           .map(
               (e) => PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
@@ -105,6 +108,7 @@ class PanelButton extends InputBase {
     for (var actionGroup in button.actionGroups) {
       ActionGroupManager().addActionGroup(actionGroup);
       actionGroup.parent = button;
+      UidManager().updateActionGroupUid(actionGroup.uid);
     }
     return button;
   }
@@ -112,6 +116,7 @@ class PanelButton extends InputBase {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'name': name,
       'actionGroups': actionGroups.map((e) => e.toJson()).toList(),
       if (explicitAssociatedDeviceUid != -1)
         'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid,
@@ -230,7 +235,7 @@ class PanelConfigNotifier extends ChangeNotifier {
     final panel =
         Panel(id: _allPanels.length, type: type, name: '未命名 面板', buttons: [
       for (int i = 0; i < buttonCount; i++) ...[
-        PanelButton(id: i, actionGroups: [
+        PanelButton(id: i, name: '', actionGroups: [
           PanelButtonActionGroup(
               uid: UidManager().generateActionGroupUid(),
               atomicActions: [],

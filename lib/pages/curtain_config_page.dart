@@ -96,6 +96,15 @@ class _CurtainWidgetState extends State<CurtainWidget> {
   }
 
   @override
+  void didUpdateWidget(CurtainWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.curtain.name != widget.curtain.name) {
+      nameController.text = widget.curtain.name;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final curtainConfigNotifier = context.watch<CurtainNotifier>();
 

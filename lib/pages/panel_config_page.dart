@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
@@ -105,6 +106,7 @@ class _PanelWidgetState extends State<PanelWidget> {
   late TextEditingController panelIdController;
   late TextEditingController panelNameController;
   late List<TextEditingController> buttonIdControllers;
+  late List<TextEditingController> buttonNameControllers;
 
   @override
   void initState() {
@@ -115,6 +117,10 @@ class _PanelWidgetState extends State<PanelWidget> {
         widget.panel.buttons.length,
         (i) =>
             TextEditingController(text: widget.panel.buttons[i].id.toString()));
+    buttonNameControllers = List.generate(
+        widget.panel.buttons.length,
+        (i) => TextEditingController(
+            text: widget.panel.buttons[i].name.toString()));
   }
 
   @override
@@ -122,6 +128,9 @@ class _PanelWidgetState extends State<PanelWidget> {
     panelIdController.dispose();
     panelNameController.dispose();
     for (var controller in buttonIdControllers) {
+      controller.dispose();
+    }
+    for (var controller in buttonNameControllers) {
       controller.dispose();
     }
     super.dispose();
@@ -141,7 +150,7 @@ class _PanelWidgetState extends State<PanelWidget> {
       panelNameController.text = widget.panel.name;
     }
 
-    // 如果按钮数量发生变化，重新生成 buttonIdControllers
+    // 如果按钮数量发生变化，重新生成 button的Controllers
     if (widget.panel.buttons.length != oldWidget.panel.buttons.length) {
       for (var controller in buttonIdControllers) {
         controller.dispose(); // 先释放旧的资源
@@ -151,11 +160,23 @@ class _PanelWidgetState extends State<PanelWidget> {
         (i) =>
             TextEditingController(text: widget.panel.buttons[i].id.toString()),
       );
+      for (var controller in buttonNameControllers) {
+        controller.dispose(); // 先释放旧的资源
+      }
+      buttonNameControllers = List.generate(
+        widget.panel.buttons.length,
+        (i) =>
+            TextEditingController(text: widget.panel.buttons[i].id.toString()),
+      );
     } else {
       // 如果数量没变，检查每个按钮的 ID 是否需要更新
       for (int i = 0; i < widget.panel.buttons.length; i++) {
         if (widget.panel.buttons[i].id != oldWidget.panel.buttons[i].id) {
           buttonIdControllers[i].text = widget.panel.buttons[i].id.toString();
+        }
+        if (widget.panel.buttons[i].name != oldWidget.panel.buttons[i].name) {
+          buttonNameControllers[i].text =
+              widget.panel.buttons[i].name.toString();
         }
       }
     }
@@ -182,7 +203,7 @@ class _PanelWidgetState extends State<PanelWidget> {
               children: [
                 // 面板ID输入框
                 IdInputField(
-                  label: "面板ID: ",
+                  label: "面板ID",
                   controller: panelIdController,
                   initialValue: widget.panel.id,
                   onChanged: (value) {
@@ -191,11 +212,11 @@ class _PanelWidgetState extends State<PanelWidget> {
                     });
                   },
                 ),
-
                 // 面板名字输入框
                 IntrinsicWidth(
                   child: TextField(
                       decoration: InputDecoration(
+                        labelText: '名称',
                         isDense: true,
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -233,6 +254,7 @@ class _PanelWidgetState extends State<PanelWidget> {
                   key: ValueKey(button.id),
                   button: button,
                   buttonIdController: buttonIdControllers[index],
+                  buttonNameController: buttonNameControllers[index],
                 );
               },
             ),
@@ -246,12 +268,13 @@ class _PanelWidgetState extends State<PanelWidget> {
 class PanelButtonWidget extends StatefulWidget {
   final PanelButton button;
   final TextEditingController buttonIdController;
+  final TextEditingController buttonNameController;
 
-  const PanelButtonWidget({
-    super.key,
-    required this.button,
-    required this.buttonIdController,
-  });
+  const PanelButtonWidget(
+      {super.key,
+      required this.button,
+      required this.buttonIdController,
+      required this.buttonNameController});
 
   @override
   State<PanelButtonWidget> createState() => _PanelButtonWidgetState();
@@ -278,22 +301,39 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: IdInputField(
-                      label: "按钮ID:",
-                      controller: widget.buttonIdController,
-                      initialValue: widget.button.id,
+                IdInputField(
+                    label: "按钮ID",
+                    controller: widget.buttonIdController,
+                    initialValue: widget.button.id,
+                    onChanged: (value) {
+                      setState(() {
+                        widget.button.id = value;
+                      });
+                    }),
+                IntrinsicWidth(
+                  child: TextField(
+                      decoration: InputDecoration(
+                        labelText: '名称',
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(4.0),
+                          borderSide:
+                              BorderSide(width: 1, color: Colors.brown),
+                        ),
+                      ),
+                      controller: widget.buttonNameController,
                       onChanged: (value) {
                         setState(() {
-                          widget.button.id = value;
+                          widget.button.name = value;
                         });
                       }),
                 ),
                 Text('指示灯受控于'),
                 CustomDropdown<int>(
                   selectedValue: widget.button.explicitAssociatedDeviceUid,
-                  items: DeviceManager().allDevices.keys.toList(),
+                  items: [-1, ...DeviceManager().allDevices.keys],
                   itemLabel: (uid) => DeviceManager().allDevices[uid] != null
                       ? DeviceManager().allDevices[uid]!.name
                       : '无',
@@ -303,6 +343,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     });
                   },
                 ),
+                Spacer(),
                 ScenarioCheckbox(
                   value: widget.button.modeName ?? '',
                   onChange: (name) {
@@ -311,7 +352,6 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                     });
                   },
                 ),
-                Spacer(),
                 // 左翻页按钮
                 IconButton(
                   icon: Icon(Icons.arrow_back, size: 20),

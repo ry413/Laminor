@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_1/commons/common_widgets.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -73,10 +75,7 @@ class LampWidget extends StatefulWidget {
   final Lamp lamp;
   final Function onDelete;
 
-  const LampWidget(
-      {super.key,
-      required this.lamp,
-      required this.onDelete});
+  const LampWidget({super.key, required this.lamp, required this.onDelete});
 
   @override
   State<LampWidget> createState() => _LampWidgetState();
@@ -84,23 +83,36 @@ class LampWidget extends StatefulWidget {
 
 class _LampWidgetState extends State<LampWidget> {
   late TextEditingController nameController;
+  late TextEditingController stateController;
 
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.lamp.name);
+    stateController = TextEditingController(text: widget.lamp.causeState);
   }
 
   @override
   void dispose() {
     nameController.dispose();
+    stateController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final lampConfigNotifier = context.watch<LampNotifier>();
+  void didUpdateWidget(LampWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
+    if (oldWidget.lamp.name != widget.lamp.name) {
+      nameController.text = widget.lamp.name;
+    }
+    if (oldWidget.lamp.causeState != widget.lamp.causeState) {
+      stateController.text = widget.lamp.causeState;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Container(
@@ -113,6 +125,7 @@ class _LampWidgetState extends State<LampWidget> {
             IntrinsicWidth(
               child: TextField(
                   decoration: InputDecoration(
+                    labelText: '名称',
                     isDense: true,
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -123,8 +136,9 @@ class _LampWidgetState extends State<LampWidget> {
                   ),
                   controller: nameController,
                   onChanged: (value) {
-                    widget.lamp.name = value;
-                    lampConfigNotifier.updateWidget(); // 输入名字时同步
+                    setState(() {
+                      widget.lamp.name = value;
+                    });
                   }),
             ),
             // 灯类型选择
@@ -139,8 +153,7 @@ class _LampWidgetState extends State<LampWidget> {
                 }),
             // 继电器设定
             BoardOutputDropdown(
-                label:
-                    widget.lamp.type == LampType.dimmableLight ? '调光器' : '电源',
+                label: '',
                 selectedOutput: widget.lamp.output,
                 onChanged: (newValue) {
                   setState(() {
@@ -148,6 +161,67 @@ class _LampWidgetState extends State<LampWidget> {
                   });
                 }),
             Spacer(),
+            // 造成状态
+            IntrinsicWidth(
+              child: Container(
+                constraints: BoxConstraints(
+                  minWidth: 90,
+                ),
+                child: TextField(
+                    decoration: InputDecoration(
+                      labelText: '影响状态',
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4.0),
+                        borderSide: BorderSide(width: 1, color: Colors.brown),
+                      ),
+                    ),
+                    controller: stateController,
+                    onChanged: (value) {
+                      setState(() {
+                        widget.lamp.causeState = value;
+                      });
+                    }),
+              ),
+            ),
+
+            // 联动设备
+            MultiSelect<IDeviceBase>(
+              title: '联动设备',
+              describe: '对本设备的操作会同时操作联动设备设备',
+              selectedItems: widget.lamp.linkDeviceUids
+                  .map((uid) => DeviceManager().getDeviceByUid(uid))
+                  .where((device) => device != null)
+                  .cast<IDeviceBase>()
+                  .toList(),
+              items: DeviceManager().allDevices.values.toList(),
+              itemLabel: (item) => item.name,
+              onConfirm: (values) => {
+                setState(() {
+                  widget.lamp.linkDeviceUids =
+                      values.map((item) => item.uid).toList();
+                })
+              },
+            ),
+            // 排斥设备
+            MultiSelect<IDeviceBase>(
+                title: '排斥设备',
+                describe: '打开本设备时会关闭排斥设备',
+                selectedItems: widget.lamp.repelDeviceUids
+                    .map((uid) => DeviceManager().getDeviceByUid(uid))
+                    .where((device) => device != null)
+                    .cast<IDeviceBase>()
+                    .toList(),
+                items: DeviceManager().allDevices.values.toList(),
+                itemLabel: (item) => item.name,
+                onConfirm: (values) => {
+                      setState(() {
+                        widget.lamp.repelDeviceUids =
+                            values.map((item) => item.uid).toList();
+                      })
+                    }),
             DeleteBtnDense(
                 message: '删除', onDelete: () => widget.onDelete(), size: 20),
             SizedBox(width: 40),

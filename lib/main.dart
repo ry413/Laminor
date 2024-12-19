@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/pages/air_config_page.dart';
 import 'package:flutter_web_1/pages/board_input_page.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_web_1/pages/lamp_config_page.dart';
 import 'package:flutter_web_1/pages/other_device_config_page.dart';
 import 'package:flutter_web_1/pages/panel_config_page.dart';
 import 'package:flutter_web_1/pages/rs485_config_page.dart';
+import 'package:flutter_web_1/pages/voice_config_page.dart';
 import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/curtain_config_provider.dart';
@@ -22,6 +24,7 @@ import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
+import 'package:flutter_web_1/providers/voice_config_provider.dart';
 import 'package:provider/provider.dart';
 import 'web_export_stub.dart' if (dart.library.html) 'web_export.dart';
 
@@ -29,6 +32,8 @@ String ipAddress = '192.168.2.40';
 int port = 8080;
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // 确保初始化
+  SemanticsBinding.instance.ensureSemantics(); // 强制启用语义
   runApp(
     MultiProvider(
       providers: [
@@ -56,6 +61,9 @@ void main() {
         ChangeNotifierProvider(
           create: (context) => OtherDeviceNotifier(),
         ),
+        ChangeNotifierProvider(
+          create: (context) => VoiceConfigNotifier(),
+        )
       ],
       child: MyApp(),
     ),
@@ -73,7 +81,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
       ),
-      home: MyHomePage(),
+      home: Semantics(
+          container: true, excludeSemantics: true, child: MyHomePage()),
     );
   }
 }
@@ -94,6 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const int indexBoardInputPage = 8;
   static const int indexRS485Page = 9;
   static const int indexOtherDevicePage = 10;
+  static const int indexVoiceCommandPage = 11;
 
   var _selectedIndex = indexHomePage;
 
@@ -105,6 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool showCurtainList = true;
   bool showRS485List = true;
   bool showOtherDeviceList = true;
+  bool showVoiceCommandList = true;
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final rs485Notifier = context.watch<RS485ConfigNotifier>();
     final panelNotifier = context.watch<PanelConfigNotifier>();
     final otherDeviceNotifier = context.watch<OtherDeviceNotifier>();
+    final voiceCommandNotifier = context.watch<VoiceConfigNotifier>();
 
     List<Widget> navigationItems = [
       // 主页
@@ -142,6 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
 
+      // 板子
       sideBarItem(indexBoardOutputPage, '板子配置', Icons.developer_board,
           showBoardOutputList, () {
         showBoardOutputList = !showBoardOutputList;
@@ -190,12 +203,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
       Divider(height: 3),
 
+      // 面板
       sideBarItem(
           indexPanelPage, '面板配置', Icons.border_all_rounded, showPanelList, () {
         showPanelList = !showPanelList;
       }),
       ...buildItemList(showPanelList, panelNotifier.allPanel, indexPanelPage),
 
+      // 干接点输入
       sideBarItem(indexBoardInputPage, "输入配置", Icons.developer_board,
           showBoardInputList, () {
         showBoardInputList = !showBoardInputList;
@@ -219,6 +234,14 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           );
         }),
+
+      // 语音指令
+      sideBarItem(indexVoiceCommandPage, '语音指令', Icons.keyboard_voice,
+          showVoiceCommandList, () {
+        showVoiceCommandList = !showVoiceCommandList;
+      }),
+      ...buildItemList(showVoiceCommandList,
+          voiceCommandNotifier.allVoiceCommands, indexVoiceCommandPage),
 
       Divider(height: 3),
       // 生成json的按钮
@@ -376,6 +399,8 @@ class _MyHomePageState extends State<MyHomePage> {
         return RS485ConfigPage();
       case indexCurtainPage:
         return CurtainConfigPage();
+      case indexVoiceCommandPage:
+        return VoiceConfigPage();
       default:
         return Placeholder();
     }
@@ -405,7 +430,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  
   Future<void> uploadAndParseJsonDesktop() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -430,5 +454,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ));
     }
   }
-
 }

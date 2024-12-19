@@ -100,6 +100,18 @@ class _RS485WidgetState extends State<RS485Widget> {
   }
 
   @override
+  void didUpdateWidget(RS485Widget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.command.name != widget.command.name) {
+      nameController.text = widget.command.name;
+    }
+    if (oldWidget.command.code != widget.command.code) {
+      codeController.text = widget.command.code;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final rs485ConfigNotifier = context.watch<RS485ConfigNotifier>();
 

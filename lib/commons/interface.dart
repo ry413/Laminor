@@ -50,13 +50,23 @@ class AssociatedButton {
 abstract class IDeviceBase with UsageCountMixin {
   String name;
   final int uid;
+
+  String causeState; // 此设备会造成的状态
+  List<int> linkDeviceUids; // 此设备联动的设备们
+  List<int> repelDeviceUids; // 此设备排斥的设备们
+
   List<AssociatedButton>
       _associatedButtons; // 这个属性在常时是不应该被使用的, 仅仅在最终的toJson时才能用它
 
-  IDeviceBase({
-    required this.uid,
-    required this.name,
-  }) : _associatedButtons = [];
+  IDeviceBase(
+      {required this.uid,
+      required this.name,
+      this.causeState = '',
+      List<int>? linkDeviceUids,
+      List<int>? repelDeviceUids})
+      : _associatedButtons = [],
+        linkDeviceUids = linkDeviceUids ?? [],
+        repelDeviceUids = repelDeviceUids ?? [];
 
   List<String> get operations => [];
 
@@ -75,6 +85,9 @@ abstract class IDeviceBase with UsageCountMixin {
     return {
       'name': name,
       'uid': uid,
+      if (causeState.isNotEmpty) 'causeState': causeState,
+      if (linkDeviceUids.isNotEmpty) 'linkDeviceUids': linkDeviceUids,
+      if (repelDeviceUids.isNotEmpty) 'repelDeviceUids': repelDeviceUids,
       'associatedButtons': _associatedButtons
           .map((e) => {'panelId': e.panelId, 'buttonId': e.buttonId})
           .toList(),
@@ -117,6 +130,12 @@ abstract class ActionGroupBase {
     return create(json);
   }
 }
+
+// enum OperationType {
+//   device,
+//   heartbeatState,
+//   mode
+// }
 
 abstract class InputBase {
   List<ActionGroupBase> actionGroups;

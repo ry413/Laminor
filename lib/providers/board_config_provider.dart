@@ -84,6 +84,7 @@ class InputActionGroup extends ActionGroupBase {
           .toList(),
     );
     ActionGroupManager().addActionGroup(actionGroup);
+    UidManager().updateActionGroupUid(actionGroup.uid);
     return actionGroup;
   }
 }

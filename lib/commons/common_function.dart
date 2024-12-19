@@ -13,6 +13,7 @@ import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
 import 'package:flutter_web_1/providers/rs485_config_provider.dart';
+import 'package:flutter_web_1/providers/voice_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:provider/provider.dart';
@@ -110,6 +111,13 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     rs485CommandNotifier.deserializationUpdate(newCommands);
 
+    final voiceCommandNotifier =
+        Provider.of<VoiceConfigNotifier>(context, listen: false);
+    final newVoiceCommands = (jsonData['语音指令列表'] as List)
+        .map((item) => VoiceCommand.fromJson(item))
+        .toList();
+    voiceCommandNotifier.deserializationUpdate(newVoiceCommands);
+
     // 到这里再解析inputs
     final boardListJson = (jsonData['板子列表'] as List);
     for (int i = 0; i < newBoards.length; i++) {
@@ -140,7 +148,8 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
 }
 
 // 把json发送到指定地址
-Future<void> generateAndSendJson(String ipAddress, int port, BuildContext context) async {
+Future<void> generateAndSendJson(
+    String ipAddress, int port, BuildContext context) async {
   String jsonStr = jsonEncode(generateJson(context));
   try {
     // 连接到指定的 TCP 服务器
@@ -189,6 +198,8 @@ Map<String, dynamic> generateJson(BuildContext context) {
       Provider.of<PanelConfigNotifier>(context, listen: false);
   final otherDeviceNotifier =
       Provider.of<OtherDeviceNotifier>(context, listen: false);
+  final voiceCommandNotifier =
+      Provider.of<VoiceConfigNotifier>(context, listen: false);
 
   // 清空可能残留的所有设备的关联按钮
   for (var device in DeviceManager().allDevices.values) {
@@ -215,6 +226,9 @@ Map<String, dynamic> generateJson(BuildContext context) {
         .map((device) => device.toJson())
         .toList(),
     '485指令码列表': rs485CommandNotifier.allCommands
+        .map((command) => command.toJson())
+        .toList(),
+    '语音指令列表': voiceCommandNotifier.allVoiceCommands
         .map((command) => command.toJson())
         .toList(),
   };

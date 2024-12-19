@@ -37,10 +37,6 @@ class UidManager {
     _airConUid = uid;
   }
 
-
-  void resetDeviceUid() {
-    _deviceUid = 0;
-  }
   int generateDeviceUid() {
     return ++_deviceUid;
   }
@@ -52,9 +48,8 @@ class UidManager {
   int generateActionGroupUid() {
     return ++_actionGroup;
   }
-  void setActionGroupUid(int uid) {
-    _actionGroup = uid;
+  void updateActionGroupUid(int uid) {
+    _actionGroup = max(uid, _actionGroup);
   }
-
 
 }

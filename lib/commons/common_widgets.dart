@@ -6,6 +6,7 @@ import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:provider/provider.dart';
 
 class ConfigSection extends StatelessWidget {
@@ -181,39 +182,31 @@ class IdInputField extends StatefulWidget {
 class _IDInputFieldState extends State<IdInputField> {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 4.0),
-          child:
-              Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 50),
-              child: TextField(
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(4.0),
-                      borderSide: BorderSide(width: 1, color: Colors.brown),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  controller: widget.controller,
-                  onChanged: (value) {
-                    if (value.isEmpty) {
-                      widget.onChanged(0);
-                    } else {
-                      widget.onChanged(int.parse(value));
-                    }
-                  })),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 60),
+          child: TextField(
+              decoration: InputDecoration(
+                labelText: widget.label,
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(4.0),
+                  borderSide: BorderSide(width: 1, color: Colors.brown),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              controller: widget.controller,
+              onChanged: (value) {
+                if (value.isEmpty) {
+                  widget.onChanged(0);
+                } else {
+                  widget.onChanged(int.parse(value));
+                }
+              })),
     );
   }
 }
@@ -759,6 +752,58 @@ class ScenarioCheckboxState extends State<ScenarioCheckbox> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class MultiSelect<T> extends StatefulWidget {
+  final String title;
+  final String describe;
+  final List<T> selectedItems;
+  final List<T> items;
+  final String Function(T) itemLabel;
+  final void Function(List<T>) onConfirm;
+
+  const MultiSelect(
+      {super.key,
+      required this.title,
+      required this.describe,
+      required this.selectedItems,
+      required this.items,
+      required this.itemLabel,
+      required this.onConfirm});
+
+  @override
+  MultiSelectState<T> createState() => MultiSelectState<T>();
+}
+
+class MultiSelectState<T> extends State<MultiSelect<T>> {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: MultiSelectDialogField<T>(
+        buttonText: Text(
+          "${widget.title}\n${widget.selectedItems.length}",
+        ),
+        items: widget.items
+            .map((item) => MultiSelectItem<T>(item, widget.itemLabel(item)))
+            .toList(),
+        title: Row(
+          children: [
+            Text(widget.title),
+            SizedBox(width: 8),
+            Text(widget.describe, style: TextStyle(
+              fontSize: 14
+            ),)
+          ],
+        ),
+        initialValue: widget.selectedItems,
+        selectedColor: Colors.blue,
+        onConfirm: (values) {
+            widget.onConfirm(values.cast<T>());
+        },
+        chipDisplay: MultiSelectChipDisplay.none()
       ),
     );
   }
