@@ -1,12 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_web_1/commons/common_function.dart';
+import 'package:flutter_web_1/commons/interface.dart';
+import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/uid_manager.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:provider/provider.dart';
-
-part 'air_config_provider.g.dart';
 
 // 空调模式
 enum ACMode {
@@ -98,49 +96,125 @@ extension ACAutoVentSpeedExtension on ACAutoVentSpeed {
 }
 
 // 单台盘管空调配置数据结构
-@JsonSerializable()
-class AirCon {
+class AirCon extends IDeviceBase {
   int id;
-  int uid; // 显然, 易证
-  String name;
-
-  @JsonKey(fromJson: _acTypeFromJson, toJson: _acTypeToJson)
   ACType type;
-  int channelPowerUid;
-  int channelLowUid;
-  int channelMidUid;
-  int channelHighUid;
-  int channelWater1Uid;
-  int channelWater2Uid;
+
+  BoardOutput _lowOutput;
+  BoardOutput _midOutput;
+  BoardOutput _highOutput;
+  BoardOutput _water1Output;
+  // BoardOutput _water2Output;
 
   AirCon({
     required this.id,
-    required this.uid,
-    required this.name,
     required this.type,
-    required this.channelPowerUid,
-    required this.channelLowUid,
-    required this.channelMidUid,
-    required this.channelHighUid,
-    required this.channelWater1Uid,
-    required this.channelWater2Uid,
-  });
+    required BoardOutput low,
+    required BoardOutput mid,
+    required BoardOutput high,
+    required BoardOutput water1,
+    // required BoardOutput? water2,
+    required super.name,
+    required super.uid,
+    // super.causeState,
+    // super.linkDeviceUids,
+    // super.repelDeviceUids,
+  })  : _lowOutput = low,
+        _midOutput = mid,
+        _highOutput = high,
+        _water1Output = water1
+  // _water2Output = water2
+  {
+    _lowOutput.addUsage();
+    _midOutput.addUsage();
+    _highOutput.addUsage();
+    _water1Output.addUsage();
+    // _water2Output?.addUsage();
+  }
+  BoardOutput get lowOutput => _lowOutput;
+  BoardOutput get midOutput => _midOutput;
+  BoardOutput get highOutput => _highOutput;
+  BoardOutput get water1Output => _water1Output;
+  // BoardOutput? get water2Output => _water2Output;
 
-  static List<String> get operations {
-    return ["开", "关"];
+  set lowOutput(BoardOutput newOutput) {
+    _lowOutput.removeUsage();
+    _lowOutput = newOutput;
+    _lowOutput.addUsage();
+  }
+
+  set midOutput(BoardOutput newOutput) {
+    _midOutput.removeUsage();
+    _midOutput = newOutput;
+    _midOutput.addUsage();
+  }
+
+  set highOutput(BoardOutput newOutput) {
+    _highOutput.removeUsage();
+    _highOutput = newOutput;
+    _highOutput.addUsage();
+  }
+
+  set water1Output(BoardOutput newOutput) {
+    _water1Output.removeUsage();
+    _water1Output = newOutput;
+    _water1Output.addUsage();
+  }
+
+  // set water2Output(BoardOutput newOutput) {
+  //   _water2Output.removeUsage();
+  //   _water2Output = newOutput;
+  //   _water2Output.addUsage();
+  // }
+
+  @override
+  List<String> get operations {
+    return [
+      '打开',
+      '关闭',
+      '制冷',
+      '制热',
+      '低风',
+      '中风',
+      '高风',
+      '风量加大',
+      '风量减小',
+      '温度升高',
+      '温度降低',
+      '调节温度'
+    ];
   }
 
   // AirCon的正反序列化
-  factory AirCon.fromJson(Map<String, dynamic> json) => _$AirConFromJson(json);
-  Map<String, dynamic> toJson() => _$AirConToJson(this);
+  factory AirCon.fromJson(Map<String, dynamic> json) {
+    return AirCon(
+        id: (json['id'] as num).toInt(),
+        type: ACType.values[json['type'] as int],
+        low: BoardManager().getOutputByUid(json['lowUid'] as int),
+        mid: BoardManager().getOutputByUid(json['midUid'] as int),
+        high: BoardManager().getOutputByUid(json['highUid'] as int),
+        water1: BoardManager().getOutputByUid(json['water1Uid'] as int),
+        name: json['name'] as String,
+        uid: (json['uid'] as num).toInt());
+  }
 
-  // ACType的正反序列化
-  static ACType _acTypeFromJson(int index) => ACType.values[index];
-  static int _acTypeToJson(ACType type) => type.index;
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'id': id,
+      'type': type.index,
+      'lowUid': _lowOutput.uid,
+      'midUid': _midOutput.uid,
+      'highUid': _highOutput.uid,
+      'water1Uid': _water1Output.uid,
+      // if (type == ACType.double) 'water2Uid': _water2Output!.uid,
+    };
+  }
 }
 
 // 空调总配置管理类
-class AirConNotifier extends ChangeNotifier {
+class AirConNotifier extends ChangeNotifier with DeviceNotifierMixin {
   // 默认模式
   ACMode _defaultMode = ACMode.cooling;
   ACMode get defaultMode => _defaultMode;
@@ -213,39 +287,31 @@ class AirConNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<int, AirCon> _allAirCons = {};
-
-  Map<int, AirCon> get allAirCons => _allAirCons;
+  List<AirCon> get allAirCons => DeviceManager().getDevices<AirCon>().toList();
 
   // 添加一个新空调
   void addAirCon(BuildContext context) {
     final allOutputs =
         Provider.of<BoardConfigNotifier>(context, listen: false).allOutputs;
     if (allOutputs.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('请先配置输出'), duration: Duration(seconds: 1)));
       return;
     }
 
     final airCon = AirCon(
-      id: allAirCons.length,
-      uid: UidManager().generateAirConUid(),
+      id: DeviceManager().getDevices<AirCon>().length,
+      uid: UidManager().generateDeviceUid(),
       name: '未命名 空调',
       type: ACType.single,
-      channelPowerUid: allOutputs.keys.first,
-      channelLowUid: allOutputs.keys.first,
-      channelMidUid: allOutputs.keys.first,
-      channelHighUid: allOutputs.keys.first,
-      channelWater1Uid: allOutputs.keys.first,
-      channelWater2Uid: allOutputs.keys.first,
+      low: allOutputs.values.first,
+      mid: allOutputs.values.first,
+      high: allOutputs.values.first,
+      water1: allOutputs.values.first,
+      // water2: allOutputs.values.first,
     );
 
-    _allAirCons[airCon.uid] = airCon;
-    notifyListeners();
-  }
-
-  void removeAirCon(int key) {
-    _allAirCons.remove(key);
+    DeviceManager().addDevice(airCon);
     notifyListeners();
   }
 
@@ -275,19 +341,6 @@ class AirConNotifier extends ChangeNotifier {
     _highFanTempDiff = json['highFanTempDiff'] as int;
     _autoVentSpeed = ACAutoVentSpeed.values[json['autoVentSpeed'] as int];
 
-    notifyListeners();
-  }
-
-  void deserializationUpdate(List<AirCon> newAirCons) {
-    _allAirCons.clear();
-    int newAirConUidMax =
-        newAirCons.fold(0, (prev, airCon) => max(prev, airCon.uid));
-
-    UidManager().setAirConUid(newAirConUidMax + 1);
-
-    for (var airCon in newAirCons) {
-      _allAirCons[airCon.uid] = airCon;
-    }
     notifyListeners();
   }
 }

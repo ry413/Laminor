@@ -216,7 +216,7 @@ Map<String, dynamic> generateJson(BuildContext context) {
 
     '灯列表': lampConfigNotifier.allLamps.map((lamp) => lamp.toJson()).toList(),
     '空调通用配置': acConfigNotifier.toJson(),
-    '空调列表': acConfigNotifier.allAirCons.values
+    '空调列表': acConfigNotifier.allAirCons
         .map((acConfig) => acConfig.toJson())
         .toList(),
     '窗帘列表': curtainConfigNotifier.allCurtains

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
+import 'package:flutter_web_1/providers/air_config_provider.dart';
 import 'package:flutter_web_1/providers/board_config_provider.dart';
 import 'package:flutter_web_1/providers/lamp_config_provider.dart';
 import 'package:flutter_web_1/providers/other_device_config_provider.dart';
@@ -686,6 +687,23 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
         ),
         // SectionTitle(title: '秒'),
       ]);
+    } else if (device is AirCon &&
+        device.type == ACType.single &&
+        atomicAction.operation == "调节温度") {
+      children.addAll([
+        SectionTitle(title: '至'),
+        CustomDropdown<int>(
+            selectedValue: atomicAction.parameter.isNotEmpty
+            ? int.parse(atomicAction.parameter)
+            : 16,
+            items: List.generate(13, (i) => i + 16),
+            itemLabel: (value) => value.toString(),
+            onChanged: (value) {
+              setState(() {
+                atomicAction.parameter = value.toString();
+              });
+            }),
+      ]);
     }
 
     return Row(children: children);
@@ -783,28 +801,28 @@ class MultiSelectState<T> extends State<MultiSelect<T>> {
   Widget build(BuildContext context) {
     return Center(
       child: MultiSelectDialogField<T>(
-        buttonText: Text(
-          "${widget.title}\n${widget.selectedItems.length}",
-        ),
-        items: widget.items
-            .map((item) => MultiSelectItem<T>(item, widget.itemLabel(item)))
-            .toList(),
-        title: Row(
-          children: [
-            Text(widget.title),
-            SizedBox(width: 8),
-            Text(widget.describe, style: TextStyle(
-              fontSize: 14
-            ),)
-          ],
-        ),
-        initialValue: widget.selectedItems,
-        selectedColor: Colors.blue,
-        onConfirm: (values) {
+          buttonText: Text(
+            "${widget.title}\n${widget.selectedItems.length}",
+          ),
+          items: widget.items
+              .map((item) => MultiSelectItem<T>(item, widget.itemLabel(item)))
+              .toList(),
+          title: Row(
+            children: [
+              Text(widget.title),
+              SizedBox(width: 8),
+              Text(
+                widget.describe,
+                style: TextStyle(fontSize: 14),
+              )
+            ],
+          ),
+          initialValue: widget.selectedItems,
+          selectedColor: Colors.blue,
+          onConfirm: (values) {
             widget.onConfirm(values.cast<T>());
-        },
-        chipDisplay: MultiSelectChipDisplay.none()
-      ),
+          },
+          chipDisplay: MultiSelectChipDisplay.none()),
     );
   }
 }

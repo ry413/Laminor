@@ -6,8 +6,6 @@ class UidManager {
 
   int _deviceUid = 0;       // 所有Device用同一个uid计数
 
-  int _airConUid = 1;
-
   int _actionGroup = 0;
 
 
@@ -29,14 +27,7 @@ class UidManager {
     _outputUid = uid;
   }
 
-  // 空调
-  int generateAirConUid() {
-    return _airConUid++;
-  }
-  void setAirConUid(int uid) {
-    _airConUid = uid;
-  }
-
+  // 设备
   int generateDeviceUid() {
     return ++_deviceUid;
   }
