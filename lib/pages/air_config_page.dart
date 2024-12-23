@@ -133,11 +133,12 @@ class ACConfigPageState extends State<ACConfigPage> {
                     return AirConWidget(
                       airCon: airCon,
                       onDelete: () {
-                        airCon.lowOutput.removeUsage();
-                        airCon.midOutput.removeUsage();
-                        airCon.highOutput.removeUsage();
-                        airCon.water1Output.removeUsage();
-                        // airCon.water2Output.removeUsage();
+                        if (airCon.type == ACType.single) {
+                          airCon.lowOutput!.removeUsage();
+                          airCon.midOutput!.removeUsage();
+                          airCon.highOutput!.removeUsage();
+                          airCon.water1Output!.removeUsage();
+                        }
                         acConfigNotifier.removeDevice(airCon.uid);
                       },
                     );
@@ -297,7 +298,7 @@ class _AirConWidgetState extends State<AirConWidget> {
                 children: [
                   BoardOutputDropdown(
                     label: '低风',
-                    selectedOutput: widget.airCon.lowOutput,
+                    selectedOutput: widget.airCon.lowOutput!,
                     onChanged: (newValue) {
                       setState(() {
                         widget.airCon.lowOutput = newValue;
@@ -306,7 +307,7 @@ class _AirConWidgetState extends State<AirConWidget> {
                   ),
                   BoardOutputDropdown(
                     label: '中风',
-                    selectedOutput: widget.airCon.midOutput,
+                    selectedOutput: widget.airCon.midOutput!,
                     onChanged: (newValue) {
                       setState(() {
                         widget.airCon.midOutput = newValue;
@@ -315,7 +316,7 @@ class _AirConWidgetState extends State<AirConWidget> {
                   ),
                   BoardOutputDropdown(
                     label: '高风',
-                    selectedOutput: widget.airCon.highOutput,
+                    selectedOutput: widget.airCon.highOutput!,
                     onChanged: (newValue) {
                       setState(() {
                         widget.airCon.highOutput = newValue;
@@ -324,29 +325,26 @@ class _AirConWidgetState extends State<AirConWidget> {
                   ),
                   BoardOutputDropdown(
                     label: widget.airCon.type == ACType.single ? '水阀' : '冷水阀',
-                    selectedOutput: widget.airCon.water1Output,
+                    selectedOutput: widget.airCon.water1Output!,
                     onChanged: (newValue) {
                       setState(() {
                         widget.airCon.water1Output = newValue;
                       });
                     },
                   ),
-                  // if (widget.airCon.type == ACType.double)
-                  //   BoardOutputDropdown(
-                  //     label: '热水阀',
-                  //     selectedOutput: widget.airCon.channelWater2Uid,
-                  //     onChanged: (newValue) {
-                  //       setState(() {
-                  //         widget.airCon.channelWater2Uid = newValue;
-                  //       });
-                  //     },
-                  //   ),
                 ],
               ),
-            ] else ...[
-              Text('红外空调的配置...'),
-              Text('红外空调的配置...'),
-              Text('红外空调的配置...'),
+            ] else if (widget.airCon.type == ACType.infrared) ...[
+              SectionTitle(title: '空调型号'),
+              CustomDropdown(
+                  selectedValue: widget.airCon.codeBases,
+                  items: CodeBases.values,
+                  itemLabel: (item) => item!.displayName,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.airCon.codeBases = value;
+                    });
+                  }),
             ]
           ],
         ),

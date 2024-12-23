@@ -95,77 +95,77 @@ extension ACAutoVentSpeedExtension on ACAutoVentSpeed {
   }
 }
 
-// 单台盘管空调配置数据结构
+// 红外码库
+enum CodeBases { gree }
+
+extension CodebasesExtension on CodeBases {
+  String get displayName {
+    switch (this) {
+      case CodeBases.gree:
+        return '格力';
+    }
+  }
+}
+
+// 单台盘管空调配置数据结构, 根据type来决定哪些属性有效
 class AirCon extends IDeviceBase {
   int id;
-  ACType type;
+  ACType _type;
 
-  BoardOutput _lowOutput;
-  BoardOutput _midOutput;
-  BoardOutput _highOutput;
-  BoardOutput _water1Output;
-  // BoardOutput _water2Output;
+  BoardOutput? _lowOutput;
+  BoardOutput? _midOutput;
+  BoardOutput? _highOutput;
+  BoardOutput? _water1Output;
+
+  CodeBases? codeBases;
 
   AirCon({
     required this.id,
-    required this.type,
-    required BoardOutput low,
-    required BoardOutput mid,
-    required BoardOutput high,
-    required BoardOutput water1,
-    // required BoardOutput? water2,
+    required ACType type,
     required super.name,
     required super.uid,
-    // super.causeState,
-    // super.linkDeviceUids,
-    // super.repelDeviceUids,
-  })  : _lowOutput = low,
-        _midOutput = mid,
-        _highOutput = high,
-        _water1Output = water1
-  // _water2Output = water2
-  {
-    _lowOutput.addUsage();
-    _midOutput.addUsage();
-    _highOutput.addUsage();
-    _water1Output.addUsage();
-    // _water2Output?.addUsage();
-  }
-  BoardOutput get lowOutput => _lowOutput;
-  BoardOutput get midOutput => _midOutput;
-  BoardOutput get highOutput => _highOutput;
-  BoardOutput get water1Output => _water1Output;
-  // BoardOutput? get water2Output => _water2Output;
+  }) : _type = type;
 
-  set lowOutput(BoardOutput newOutput) {
-    _lowOutput.removeUsage();
+  ACType get type => _type;
+  set type(ACType newType) {
+    if (newType == _type) return;
+    if (newType == ACType.single) {
+      
+    } else if (newType == ACType.infrared) {
+      codeBases = CodeBases.values.first;
+    }
+
+    _type = newType;
+  }
+
+  BoardOutput? get lowOutput => _lowOutput;
+  BoardOutput? get midOutput => _midOutput;
+  BoardOutput? get highOutput => _highOutput;
+  BoardOutput? get water1Output => _water1Output;
+
+  set lowOutput(BoardOutput? newOutput) {
+    _lowOutput?.removeUsage();
     _lowOutput = newOutput;
-    _lowOutput.addUsage();
+    _lowOutput!.addUsage();
   }
 
-  set midOutput(BoardOutput newOutput) {
-    _midOutput.removeUsage();
+  set midOutput(BoardOutput? newOutput) {
+    _midOutput?.removeUsage();
     _midOutput = newOutput;
-    _midOutput.addUsage();
+    _midOutput!.addUsage();
   }
 
-  set highOutput(BoardOutput newOutput) {
-    _highOutput.removeUsage();
+  set highOutput(BoardOutput? newOutput) {
+    _highOutput?.removeUsage();
     _highOutput = newOutput;
-    _highOutput.addUsage();
+    _highOutput!.addUsage();
   }
 
-  set water1Output(BoardOutput newOutput) {
-    _water1Output.removeUsage();
+  set water1Output(BoardOutput? newOutput) {
+    _water1Output?.removeUsage();
     _water1Output = newOutput;
-    _water1Output.addUsage();
+    _water1Output!.addUsage();
   }
-
-  // set water2Output(BoardOutput newOutput) {
-  //   _water2Output.removeUsage();
-  //   _water2Output = newOutput;
-  //   _water2Output.addUsage();
-  // }
 
   @override
   List<String> get operations {
@@ -187,29 +187,47 @@ class AirCon extends IDeviceBase {
 
   // AirCon的正反序列化
   factory AirCon.fromJson(Map<String, dynamic> json) {
-    return AirCon(
+    final airCon = AirCon(
         id: (json['id'] as num).toInt(),
         type: ACType.values[json['type'] as int],
-        low: BoardManager().getOutputByUid(json['lowUid'] as int),
-        mid: BoardManager().getOutputByUid(json['midUid'] as int),
-        high: BoardManager().getOutputByUid(json['highUid'] as int),
-        water1: BoardManager().getOutputByUid(json['water1Uid'] as int),
         name: json['name'] as String,
         uid: (json['uid'] as num).toInt());
+
+    if (airCon.type == ACType.single) {
+      airCon.lowOutput = BoardManager().getOutputByUid(json['lowUid'] as int);
+      airCon.midOutput = BoardManager().getOutputByUid(json['midUid'] as int);
+      airCon.highOutput = BoardManager().getOutputByUid(json['highUid'] as int);
+      airCon.water1Output =
+          BoardManager().getOutputByUid(json['water1Uid'] as int);
+    } else if (airCon.type == ACType.infrared) {
+      airCon.codeBases = CodeBases.values[json['codeBases'] as int];
+    }
+
+    return airCon;
   }
 
   @override
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       ...super.toJson(),
       'id': id,
       'type': type.index,
-      'lowUid': _lowOutput.uid,
-      'midUid': _midOutput.uid,
-      'highUid': _highOutput.uid,
-      'water1Uid': _water1Output.uid,
-      // if (type == ACType.double) 'water2Uid': _water2Output!.uid,
     };
+
+    if (type == ACType.single) {
+      json.addAll({
+        'lowUid': _lowOutput!.uid,
+        'midUid': _midOutput!.uid,
+        'highUid': _highOutput!.uid,
+        'water1Uid': _water1Output!.uid,
+      });
+    } else if (type == ACType.infrared) {
+      json.addAll({
+        'codeBase': codeBases!.name,
+      });
+    }
+
+    return json;
   }
 }
 
@@ -304,12 +322,11 @@ class AirConNotifier extends ChangeNotifier with DeviceNotifierMixin {
       uid: UidManager().generateDeviceUid(),
       name: '未命名 空调',
       type: ACType.single,
-      low: allOutputs.values.first,
-      mid: allOutputs.values.first,
-      high: allOutputs.values.first,
-      water1: allOutputs.values.first,
-      // water2: allOutputs.values.first,
     );
+    airCon.lowOutput = allOutputs.values.first;
+    airCon.midOutput = allOutputs.values.first;
+    airCon.highOutput = allOutputs.values.first;
+    airCon.water1Output = allOutputs.values.first;
 
     DeviceManager().addDevice(airCon);
     notifyListeners();

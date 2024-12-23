@@ -59,10 +59,10 @@ class Lamp extends IDeviceBase {
       type: LampType.values[json['type'] as int],
       output: BoardManager().getOutputByUid(json['outputUid'] as int),
       causeState: json['causeState'] as String? ?? '',
-      // linkDeviceUids: (json['linkDeviceUids'] as List<dynamic>?)
-      //         ?.map((item) => (item as num).toInt())
-      //         .toList() ??
-      //     [],
+      linkDeviceUids: (json['linkDeviceUids'] as List<dynamic>?)
+              ?.map((item) => (item as num).toInt())
+              .toList() ??
+          [],
       repelDeviceUids: (json['repelDeviceUids'] as List<dynamic>?)
               ?.map((item) => (item as num).toInt())
               .toList() ??
