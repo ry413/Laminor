@@ -459,11 +459,13 @@ class FloatButton extends StatelessWidget {
 class AtomicActionRowWidget extends StatefulWidget {
   final AtomicAction atomicAction;
   final Function onDelete;
+  final int index;
 
   const AtomicActionRowWidget({
     super.key,
     required this.atomicAction,
     required this.onDelete,
+    required this.index
   });
 
   @override
@@ -471,20 +473,28 @@ class AtomicActionRowWidget extends StatefulWidget {
 }
 
 class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
-  TextEditingController? _delayController;
+  late TextEditingController _paramController;
 
   @override
   void initState() {
     super.initState();
     // 初始化延时输入框文本
-    _delayController =
+    _paramController =
         TextEditingController(text: widget.atomicAction.parameter.toString());
   }
 
   @override
   void dispose() {
-    _delayController?.dispose();
+    _paramController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(AtomicActionRowWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.atomicAction.parameter != oldWidget.atomicAction.parameter) {
+      _paramController.text = widget.atomicAction.parameter.toString();
+    }
   }
 
   @override
@@ -493,6 +503,11 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
 
     return Row(
       children: [
+        // 拖拽手柄
+        ReorderableDragStartListener(
+          index: widget.index, // 绑定拖拽索引
+          child: Icon(Icons.drag_handle, size: 20), // 手柄图标
+        ),
         // 目标设备下拉菜单
         Row(
           children: [
@@ -619,7 +634,7 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
                 borderSide: BorderSide(width: 1, color: Colors.brown),
               ),
             ),
-            controller: _delayController,
+            controller: _paramController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
@@ -677,7 +692,7 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
                 borderSide: BorderSide(width: 1, color: Colors.brown),
               ),
             ),
-            controller: _delayController,
+            controller: _paramController,
             onChanged: (value) {
               setState(() {
                 atomicAction.parameter = value;
@@ -824,5 +839,36 @@ class MultiSelectState<T> extends State<MultiSelect<T>> {
           },
           chipDisplay: MultiSelectChipDisplay.none()),
     );
+  }
+}
+
+
+class NoScrollController extends ScrollController {
+  @override
+  void attach(ScrollPosition position) {
+    // 不调用 super.attach(position);
+    // 或者你调用了也行，但要确保不会做任何 offset 变化
+  }
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition
+  ) {
+    // 给它一个不会动的 position
+    return ScrollPositionWithSingleContext(
+      physics: const NeverScrollableScrollPhysics(),
+      context: context,
+      oldPosition: oldPosition,
+    );
+  }
+
+  // 其它 animateTo / jumpTo 都可以重写空实现
+  @override
+  void jumpTo(double value) {}
+  @override
+  Future<void> animateTo(double offset, {required Duration duration, required Curve curve}) {
+    return Future.value();
   }
 }

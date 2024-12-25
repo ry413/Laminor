@@ -206,8 +206,9 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
 
   @override
   Widget build(BuildContext context) {
-    final currentActionGroup =
-        widget.input.actionGroups[widget.input.currentActionGroupIndex];
+    final currentActionGroupIndex = widget.input.currentActionGroupIndex;
+    final actionGroup = widget.input.actionGroups[currentActionGroupIndex];
+    final atomicActions = actionGroup.atomicActions;
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -372,25 +373,30 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
             ],
           ),
           // 当前动作组的动作列表
-          Column(
-            children: List.generate(
-              currentActionGroup.atomicActions.length,
-              (index) => AtomicActionRowWidget(
-                  atomicAction: widget
-                      .input
-                      .actionGroups[widget.input.currentActionGroupIndex]
-                      .atomicActions[index],
-                  onDelete: () => {
-                        setState(() {
-                          widget
-                              .input
-                              .actionGroups[
-                                  widget.input.currentActionGroupIndex]
-                              .atomicActions
-                              .removeAt(index);
-                        })
-                      }),
-            ),
+          ReorderableListView(
+            buildDefaultDragHandles: false, // 关闭默认长按拖拽
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(), // 不要滚动
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = atomicActions.removeAt(oldIndex);
+                atomicActions.insert(newIndex, item);
+              });
+            },
+            children: [
+              for (int i = 0; i < atomicActions.length; i++)
+                AtomicActionRowWidget(
+                  key: ValueKey('atomicAction-$i'),
+                  atomicAction: atomicActions[i],
+                  index: i,
+                  onDelete: () {
+                    setState(() {
+                      atomicActions.removeAt(i);
+                    });
+                  },
+                ),
+            ],
           ),
           // 添加新的动作到当前动作组
           Row(
@@ -408,7 +414,7 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                       return;
                     }
                     setState(() {
-                      currentActionGroup.atomicActions.add(
+                      actionGroup.atomicActions.add(
                         AtomicAction.defaultAction(),
                       );
                     });

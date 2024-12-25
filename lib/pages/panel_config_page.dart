@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_web_1/commons/interface.dart';
 import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/providers/panel_config_provider.dart';
@@ -286,6 +285,10 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
     final currentActionGroup =
         widget.button.actionGroups[widget.button.currentActionGroupIndex];
 
+    final currentActionGroupIndex = widget.button.currentActionGroupIndex;
+    final actionGroup = widget.button.actionGroups[currentActionGroupIndex];
+    final atomicActions = actionGroup.atomicActions;
+
     return Container(
         margin: EdgeInsets.symmetric(vertical: 8.0),
         padding: EdgeInsets.all(4),
@@ -319,8 +322,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                             EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(4.0),
-                          borderSide:
-                              BorderSide(width: 1, color: Colors.brown),
+                          borderSide: BorderSide(width: 1, color: Colors.brown),
                         ),
                       ),
                       controller: widget.buttonNameController,
@@ -449,24 +451,31 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 ),
               ],
             ),
-            Column(
-              children: List.generate(
-                  currentActionGroup.atomicActions.length,
-                  (index) => AtomicActionRowWidget(
-                      atomicAction: widget
-                          .button
-                          .actionGroups[widget.button.currentActionGroupIndex]
-                          .atomicActions[index],
-                      onDelete: () => {
-                            setState(() {
-                              widget
-                                  .button
-                                  .actionGroups[
-                                      widget.button.currentActionGroupIndex]
-                                  .atomicActions
-                                  .removeAt(index);
-                            })
-                          })),
+            // 当前动作组的动作列表
+            ReorderableListView(
+              buildDefaultDragHandles: false, // 关闭默认长按拖拽
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(), // 不要滚动
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex--;
+                  final item = atomicActions.removeAt(oldIndex);
+                  atomicActions.insert(newIndex, item);
+                });
+              },
+              children: [
+                for (int i = 0; i < atomicActions.length; i++)
+                  AtomicActionRowWidget(
+                    key: ValueKey('atomicAction-$i'),
+                    atomicAction: atomicActions[i],
+                    index: i,
+                    onDelete: () {
+                      setState(() {
+                        atomicActions.removeAt(i);
+                      });
+                    },
+                  ),
+              ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,

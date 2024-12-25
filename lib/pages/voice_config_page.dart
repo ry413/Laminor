@@ -110,8 +110,9 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final currentActionGroup =
-        widget.command.actionGroups[widget.command.currentActionGroupIndex];
+    final currentActionGroupIndex = widget.command.currentActionGroupIndex;
+    final actionGroup = widget.command.actionGroups[currentActionGroupIndex];
+    final atomicActions = actionGroup.atomicActions;
 
     return Container(
         margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -139,7 +140,8 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
                               EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(4.0),
-                            borderSide: BorderSide(width: 1, color: Colors.brown),
+                            borderSide:
+                                BorderSide(width: 1, color: Colors.brown),
                           ),
                         ),
                         controller: nameController,
@@ -162,7 +164,8 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
                               EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(4.0),
-                            borderSide: BorderSide(width: 1, color: Colors.brown),
+                            borderSide:
+                                BorderSide(width: 1, color: Colors.brown),
                           ),
                         ),
                         controller: codeController,
@@ -186,24 +189,31 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
                 ),
               ],
             ),
-            Column(
-              children: List.generate(
-                  currentActionGroup.atomicActions.length,
-                  (index) => AtomicActionRowWidget(
-                      atomicAction: widget
-                          .command
-                          .actionGroups[widget.command.currentActionGroupIndex]
-                          .atomicActions[index],
-                      onDelete: () => {
-                            setState(() {
-                              widget
-                                  .command
-                                  .actionGroups[
-                                      widget.command.currentActionGroupIndex]
-                                  .atomicActions
-                                  .removeAt(index);
-                            })
-                          })),
+            // 当前动作组的动作列表
+            ReorderableListView(
+              buildDefaultDragHandles: false, // 关闭默认长按拖拽
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(), // 不要滚动
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex--;
+                  final item = atomicActions.removeAt(oldIndex);
+                  atomicActions.insert(newIndex, item);
+                });
+              },
+              children: [
+                for (int i = 0; i < atomicActions.length; i++)
+                  AtomicActionRowWidget(
+                    key: ValueKey('atomicAction-$i'),
+                    atomicAction: atomicActions[i],
+                    index: i,
+                    onDelete: () {
+                      setState(() {
+                        atomicActions.removeAt(i);
+                      });
+                    },
+                  ),
+              ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -221,7 +231,7 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
                         return;
                       }
                       setState(() {
-                        currentActionGroup.atomicActions.add(
+                        actionGroup.atomicActions.add(
                           AtomicAction.defaultAction(),
                         );
                       });

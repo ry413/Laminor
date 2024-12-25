@@ -77,13 +77,13 @@ class OtherDevice extends IDeviceBase {
     if (type == OtherDeviceType.outputControl) {
       return ['打开', '关闭', '反转'];
     } else if (type == OtherDeviceType.heartbeatState) {
-      return ['睡眠'];
+      return ['存活', '睡眠', '死亡'];
     } else if (type == OtherDeviceType.delayer) {
       return ['延时'];
     } else if (type == OtherDeviceType.actionGroup) {
       return ['销毁'];
     } else if (type == OtherDeviceType.stateSetter) {
-      return ['设置状态为', '清除状态', '反转状态'];
+      return ['添加状态', '清除状态', '反转状态'];
     } else {
       return [];
     }

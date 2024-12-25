@@ -130,7 +130,6 @@ class AirCon extends IDeviceBase {
   set type(ACType newType) {
     if (newType == _type) return;
     if (newType == ACType.single) {
-      
     } else if (newType == ACType.infrared) {
       codeBases = CodeBases.values.first;
     }
@@ -200,7 +199,10 @@ class AirCon extends IDeviceBase {
       airCon.water1Output =
           BoardManager().getOutputByUid(json['water1Uid'] as int);
     } else if (airCon.type == ACType.infrared) {
-      airCon.codeBases = CodeBases.values[json['codeBases'] as int];
+      airCon.codeBases = CodeBases.values.firstWhere(
+        (e) => e.toString().split('.').last == json['codeBase'] as String,
+        orElse: () => throw Exception('Invalid enum value'),
+      );
     }
 
     return airCon;
