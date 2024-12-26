@@ -69,7 +69,7 @@ class HomeConfigPageState extends State<HomeConfigPage> {
       _isScanning = true;
     });
 
-    const String targetPrefix = '98:3D:AE'; // 目标 MAC 地址前缀
+    const String targetPrefix = '5C'; // 目标 MAC 地址前缀
 
     try {
       final wifiIP = await getLocalIPAddress(); // 调用本地命令获取 IP 地址
@@ -83,8 +83,9 @@ class HomeConfigPageState extends State<HomeConfigPage> {
           final ip = host.ip;
           final macAddress = await getMacAddress(ip);
 
-          if (macAddress != null && macAddress.startsWith(targetPrefix)) {
+          if (macAddress != null) {
             final ipInfo = '$ip ($macAddress)';
+            print(ipInfo);
             homeNotifier.addScannedIP(ipInfo);
           }
         }
@@ -133,16 +134,23 @@ class HomeConfigPageState extends State<HomeConfigPage> {
     try {
       // 执行 arp 命令查询 IP 对应的 MAC 地址
       final result = await Process.run('arp', [ip]);
-
       if (result.exitCode == 0) {
-        final output = result.stdout.toString();
+        var output = result.stdout.toString();
+        // print('ARP: $output');
 
         // 正则匹配 MAC 地址格式：XX:XX:XX:XX:XX:XX
-        final regex = RegExp(r'([0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5})');
+        final regex = RegExp(r'([0-9A-Fa-f]{1,2}(:[0-9A-Fa-f]{1,2}){5})');
         final match = regex.firstMatch(output);
 
         if (match != null) {
-          return match.group(0)?.toUpperCase(); // 返回大写格式的 MAC 地址
+          // 修正 MAC 地址格式，补全单字符的段为两位
+          var macAddress = match.group(0)!;
+          var correctedMac = macAddress
+              .split(':')
+              .map((segment) => segment.padLeft(2, '0'))
+              .join(':');
+          print(correctedMac.toLowerCase());
+          return correctedMac.toUpperCase(); // 返回大写格式的 MAC 地址
         }
       }
     } catch (e) {
