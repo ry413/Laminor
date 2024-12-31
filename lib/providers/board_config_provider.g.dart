@@ -25,7 +25,7 @@ Map<String, dynamic> _$BoardOutputToJson(BoardOutput instance) =>
 
 BoardInput _$BoardInputFromJson(Map<String, dynamic> json) => BoardInput(
       channel: (json['channel'] as num).toInt(),
-      level: BoardInput._inputLevelFromJson((json['level'] as num).toInt()),
+      inputType: BoardInput._inputTypeFromJson((json['level'] as num).toInt()),
       hostBoardId: (json['hostBoardId'] as num).toInt(),
       actionGroups: (json['actionGroups'] as List<dynamic>)
           .map((e) => InputActionGroup.fromJson(e as Map<String, dynamic>))
@@ -36,7 +36,7 @@ Map<String, dynamic> _$BoardInputToJson(BoardInput instance) =>
     <String, dynamic>{
       'hostBoardId': instance.hostBoardId,
       'channel': instance.channel,
-      'level': BoardInput._inputLevelToJson(instance.level),
+      'level': BoardInput._inputTypeToJson(instance.inputType),
       'actionGroups': instance.actionGroups,
     };
 

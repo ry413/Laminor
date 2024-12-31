@@ -139,7 +139,7 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                     setState(() {
                       final input = BoardInput(
                         channel: 1,
-                        level: InputLevel.high,
+                        inputType: InputType.highLevel,
                         hostBoardId: widget.board.id,
                         actionGroups: [
                           InputActionGroup(
@@ -149,7 +149,6 @@ class _BoardInputWidgetState extends State<BoardInputWidget> {
                         ],
                       );
                       for (var actionGroup in input.actionGroups) {
-                        actionGroup.parent = input;
                         ActionGroupManager().addActionGroup(actionGroup);
                       }
                       widget.board.inputs.add(input);
@@ -253,15 +252,15 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                     }),
               ),
               SizedBox(width: 8),
-              SectionTitle(title: '输入电平'),
-              // 输入电平下拉菜单
-              CustomDropdown<InputLevel>(
-                selectedValue: widget.input.level,
-                items: InputLevel.values,
+              SectionTitle(title: '输入类型'),
+              // 输入类型下拉菜单
+              CustomDropdown<InputType>(
+                selectedValue: widget.input.inputType,
+                items: InputType.values,
                 itemLabel: (item) => item.displayName,
                 onChanged: (newValue) {
                   setState(() {
-                    widget.input.level = newValue!;
+                    widget.input.inputType = newValue!;
                   });
                 },
               ),
@@ -276,14 +275,27 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                   onPressed: () => widget.onDelete(),
                 ),
               ),
-              ScenarioCheckbox(
-                value: widget.input.modeName ?? '',
-                onChange: (name) {
-                  setState(() {
-                    widget.input.modeName = name;
-                  });
-                },
-              ),
+              if (widget.input.inputType != InputType.infrared) ...[
+                ScenarioCheckbox(
+                  value: widget.input.modeName ?? '',
+                  onChange: (name) {
+                    setState(() {
+                      widget.input.modeName = name;
+                    });
+                  },
+                ),
+              ] else ...[
+                InputField(
+                  label: '红外检测时长(秒)',
+                  value: widget.input.infraredDuration ?? 0,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.input.infraredDuration = value;
+                    });
+                  },
+                  isRow: true,
+                )
+              ],
               Spacer(),
               // 左翻页按钮
               IconButton(
@@ -327,7 +339,6 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
                         final actionGroup = InputActionGroup(
                             uid: UidManager().generateActionGroupUid(),
                             atomicActions: []);
-                        actionGroup.parent = widget.input;
                         ActionGroupManager().addActionGroup(actionGroup);
                         widget.input.actionGroups.add(actionGroup);
                         widget.input.currentActionGroupIndex =
@@ -372,6 +383,7 @@ class _BoardInputUnitState extends State<BoardInputUnit> {
               ),
             ],
           ),
+          Text('动作组id: ${actionGroup.uid.toString()}'),
           // 当前动作组的动作列表
           ReorderableListView(
             buildDefaultDragHandles: false, // 关闭默认长按拖拽

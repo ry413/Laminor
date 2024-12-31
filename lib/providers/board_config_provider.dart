@@ -23,19 +23,18 @@ extension OutputTypeExtension on OutputType {
   }
 }
 
-// 输入电平
-enum InputLevel {
-  low,
-  high,
-}
+// 输入类型
+enum InputType { lowLevel, highLevel, infrared }
 
-extension InputLevelExtension on InputLevel {
+extension InputTypeExtension on InputType {
   String get displayName {
     switch (this) {
-      case InputLevel.low:
-        return '低';
-      case InputLevel.high:
-        return '高';
+      case InputType.lowLevel:
+        return '低电平';
+      case InputType.highLevel:
+        return '高电平';
+      case InputType.infrared:
+        return '红外';
     }
   }
 }
@@ -95,15 +94,17 @@ class BoardInput extends InputBase {
   int hostBoardId;
   int channel;
 
-  @JsonKey(fromJson: _inputLevelFromJson, toJson: _inputLevelToJson)
-  InputLevel level;
+  @JsonKey(fromJson: _inputTypeFromJson, toJson: _inputTypeToJson)
+  InputType inputType;
+
+  int? infraredDuration; // 反正, 是红外检测时, 多久没检测到人就关闭设备的'多久'
 
   @JsonKey(includeToJson: false, includeFromJson: false)
   int currentActionGroupIndex; // 当前动作组索引
 
   BoardInput(
       {required this.channel,
-      required this.level,
+      required this.inputType,
       required this.hostBoardId,
       required super.actionGroups,
       this.currentActionGroupIndex = 0});
@@ -112,33 +113,31 @@ class BoardInput extends InputBase {
   factory BoardInput.fromJson(Map<String, dynamic> json) {
     final input = BoardInput(
       channel: (json['channel'] as num).toInt(),
-      level: BoardInput._inputLevelFromJson((json['level'] as num).toInt()),
+      inputType: BoardInput._inputTypeFromJson((json['inputType'] as num).toInt()),
       hostBoardId: (json['hostBoardId'] as num).toInt(),
       actionGroups: (json['actionGroups'] as List<dynamic>)
           .map((e) => InputActionGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+    input.infraredDuration = (json['infraredDuration'] as num?)?.toInt();
     input.modeName = json['modeName'] as String?;
 
-    // 将本按钮设置为此动作组的宿主
-    for (var actionGroup in input.actionGroups) {
-      actionGroup.parent = input;
-    }
     return input;
   }
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'hostBoardId': hostBoardId,
       'channel': channel,
-      'level': BoardInput._inputLevelToJson(level),
+      'inputType': BoardInput._inputTypeToJson(inputType),
       'actionGroups': actionGroups,
-      if (modeName != null && modeName != '') 'modeName': modeName
+      if (modeName != null && modeName != '') 'modeName': modeName,
+      if (infraredDuration != null) 'infraredDuration': infraredDuration,
     };
   }
 
-  // InputLevel的正反序列化
-  static InputLevel _inputLevelFromJson(int index) => InputLevel.values[index];
-  static int _inputLevelToJson(InputLevel level) => level.index;
+  // InputType的正反序列化
+  static InputType _inputTypeFromJson(int index) => InputType.values[index];
+  static int _inputTypeToJson(InputType type) => type.index;
 }
 
 // 一块板子

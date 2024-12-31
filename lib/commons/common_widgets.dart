@@ -217,9 +217,14 @@ class InputField extends StatefulWidget {
   final String label;
   final int value;
   final Function(int) onChanged;
+  final bool isRow; // 新增的布尔参数
 
-  InputField(
-      {required this.label, required this.value, required this.onChanged});
+  InputField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.isRow = false, // 默认为false，默认使用Column
+  });
 
   @override
   State<InputField> createState() => _InputFieldState();
@@ -242,40 +247,61 @@ class _InputFieldState extends State<InputField> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(widget.label, style: Theme.of(context).textTheme.bodyMedium),
-        SizedBox(
-          width: 50,
-          child: TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(1.0),
-                borderSide:
-                    BorderSide(width: 1.0, color: Colors.brown), // 调整边框的颜色和宽度
-              ),
+    // 根据 isRow 的值决定返回 Row 或 Column
+    final layout = widget.isRow
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: _buildChildren(context),
+          )
+        : Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: _buildChildren(context),
+          );
+
+    return layout;
+  }
+
+  List<Widget> _buildChildren(BuildContext context) {
+    return [
+      Text(
+        widget.label,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      const SizedBox(width: 8, height: 8), // 调整间距
+      SizedBox(
+        width: 50,
+        child: TextField(
+          controller: _controller,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(1.0),
+              borderSide: const BorderSide(
+                width: 1.0,
+                color: Colors.brown,
+              ), // 调整边框的颜色和宽度
             ),
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            cursorWidth: 1.0,
-            cursorHeight:
-                Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16.0 * 1.2,
-            cursorColor: Colors.brown,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onChanged: (value) {
-              if (value.isEmpty) {
-                widget.onChanged(0);
-              } else {
-                widget.onChanged(int.parse(value));
-              }
-            },
           ),
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          cursorWidth: 1.0,
+          cursorHeight:
+              Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16.0 * 1.2,
+          cursorColor: Colors.brown,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (value) {
+            if (value.isEmpty) {
+              widget.onChanged(0);
+            } else {
+              widget.onChanged(int.parse(value));
+            }
+          },
         ),
-      ],
-    );
+      ),
+    ];
   }
 }
 
@@ -664,14 +690,7 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
               ActionGroupBase actionGroup =
                   ActionGroupManager().allActionGroups[uid] ??
                       ActionGroupManager().allActionGroups.values.first;
-
-              if (actionGroup.runtimeType == PanelButtonActionGroup) {
-                final button = actionGroup.parent as PanelButton;
-                return '面板${button.hostPanel!.id.toString()} 按钮${button.id.toString()}';
-              } else {
-                final input = actionGroup.parent as BoardInput;
-                return '输入通道${input.channel.toString()}';
-              }
+              return '动作组${actionGroup.uid.toString()}';
             },
             onChanged: (uid) {
               setState(() {

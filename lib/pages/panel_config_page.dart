@@ -405,7 +405,6 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                               pressedOtherPolitAction:
                                   ButtonOtherPolitAction.ignore);
 
-                          actionGroup.parent = widget.button;
                           ActionGroupManager().addActionGroup(actionGroup);
                           widget.button.actionGroups.add(actionGroup);
                           widget.button.currentActionGroupIndex =
@@ -451,6 +450,7 @@ class _PanelButtonWidgetState extends State<PanelButtonWidget> {
                 ),
               ],
             ),
+          Text('动作组id: ${actionGroup.uid.toString()}'),
             // 当前动作组的动作列表
             ReorderableListView(
               buildDefaultDragHandles: false, // 关闭默认长按拖拽

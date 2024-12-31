@@ -1,6 +1,5 @@
 import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/commons/managers.dart';
-import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'interface.g.dart';
@@ -107,10 +106,8 @@ abstract class ActionGroupBase {
   final int uid;
   List<AtomicAction> atomicActions;
 
-  InputBase? parent; // 此动作组的宿主输入
-
   ActionGroupBase(
-      {required this.uid, required this.atomicActions, this.parent});
+      {required this.uid, required this.atomicActions});
 
   void remove() {
     ActionGroupManager().removeActionGroup(uid);

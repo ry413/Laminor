@@ -107,7 +107,6 @@ class PanelButton extends InputBase {
     button.modeName = json['modeName'] as String?;
     for (var actionGroup in button.actionGroups) {
       ActionGroupManager().addActionGroup(actionGroup);
-      actionGroup.parent = button;
       UidManager().updateActionGroupUid(actionGroup.uid);
     }
     return button;
@@ -249,7 +248,6 @@ class PanelConfigNotifier extends ChangeNotifier {
       button.hostPanel = panel;
 
       for (var actionGroup in button.actionGroups) {
-        actionGroup.parent = button;
         ActionGroupManager().addActionGroup(actionGroup);
       }
     }

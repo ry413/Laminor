@@ -123,7 +123,7 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 按钮ID和操作按钮
             Row(
@@ -189,6 +189,7 @@ class _VoiceCommandWidgetState extends State<VoiceCommandWidget> {
                 ),
               ],
             ),
+            Text('动作组id: ${actionGroup.uid.toString()}'),
             // 当前动作组的动作列表
             ReorderableListView(
               buildDefaultDragHandles: false, // 关闭默认长按拖拽

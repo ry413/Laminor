@@ -47,7 +47,7 @@ class BoardManager {
 
     final newInput = BoardInput(
       channel: 127,
-      level: InputLevel.low,
+      inputType: InputType.lowLevel,
       hostBoardId: boardId,
       actionGroups: [
         InputActionGroup(
@@ -55,7 +55,6 @@ class BoardManager {
       ],
     );
     for (var actionGroup in newInput.actionGroups) {
-      actionGroup.parent = newInput;
       ActionGroupManager().addActionGroup(actionGroup);
     }
     board.inputs.add(newInput);
