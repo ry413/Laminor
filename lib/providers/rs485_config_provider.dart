@@ -15,7 +15,7 @@ class RS485Command extends IDeviceBase {
   factory RS485Command.fromJson(Map<String, dynamic> json) {
     return RS485Command(
       uid: (json['uid'] as num).toInt(),
-      name: json['name'] as String,
+      name: json['nm'] as String,
       code: json['code'] as String,
     );
   }
