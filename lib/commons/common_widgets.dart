@@ -722,7 +722,7 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
         // SectionTitle(title: '秒'),
       ]);
     } else if (device is AirCon &&
-        device.type == ACType.single &&
+        // device.type == ACType.single &&
         atomicAction.operation == "调节温度") {
       children.addAll([
         SectionTitle(title: '至'),
@@ -730,7 +730,7 @@ class AtomicActionRowWidgetState extends State<AtomicActionRowWidget> {
             selectedValue: atomicAction.parameter.isNotEmpty
             ? int.parse(atomicAction.parameter)
             : 16,
-            items: List.generate(13, (i) => i + 16),
+            items: List.generate(16, (i) => i + 16),
             itemLabel: (value) => value.toString(),
             onChanged: (value) {
               setState(() {

@@ -207,7 +207,8 @@ Map<String, dynamic> generateJson(BuildContext context) {
   }
 
   Map<String, dynamic> fullConfig = {
-    '适配版本': '0.1.0',
+    'type': 'Laminor',
+    '适配版本': 'thaumaturgy',
     '一般配置': homeConfigNotifier.toJson(),
     '板子列表':
         boardConfigNotifier.allBoard.map((board) => board.toJson()).toList(),

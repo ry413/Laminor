@@ -51,16 +51,16 @@ class HomePageNotifier extends ChangeNotifier {
   // 从 JSON 加载数据
   void fromJson(Map<String, dynamic> json) {
     configVersion = json['config_version'] ?? '';
-    hotelName = json['hotel_name'] ?? '';
-    roomName = json['room_name'] ?? '';
+    // hotelName = json['hotel_name'] ?? '';
+    // roomName = json['room_name'] ?? '';
   }
 
   // 转换为 JSON 数据
   Map<String, dynamic> toJson() {
     return {
       'config_version': configVersion,
-      'hotel_name': hotelName,
-      'room_name': roomName,
+      // 'hotel_name': hotelName,
+      // 'room_name': roomName,
     };
   }
 }

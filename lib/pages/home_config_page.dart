@@ -104,20 +104,22 @@ class HomeConfigPageState extends State<HomeConfigPage> {
   /// 获取本地 IP 地址（适用于 macOS）
   Future<String?> getLocalIPAddress() async {
     try {
-      // 执行系统命令 `ifconfig`，获取网络接口信息
-      final result = await Process.run('ifconfig', []);
+      final result = Platform.isWindows
+          ? await Process.run('ipconfig', [])
+          : await Process.run('ifconfig', []);
 
       if (result.exitCode == 0) {
         final output = result.stdout.toString();
 
-        // 使用正则表达式匹配 IPv4 地址
-        final regex = RegExp(r'inet (\d+\.\d+\.\d+\.\d+)');
+        // 使用不同的正则解析输出
+        final regex = Platform.isWindows
+            ? RegExp(r'IPv4 Address.*?: (\d+\.\d+\.\d+\.\d+)')
+            : RegExp(r'inet (\d+\.\d+\.\d+\.\d+)');
+
         final matches = regex.allMatches(output);
 
         for (final match in matches) {
           final ip = match.group(1);
-
-          // 过滤掉本地回环地址 127.x.x.x
           if (ip != null && !ip.startsWith('127.')) {
             return ip;
           }
@@ -180,146 +182,146 @@ class HomeConfigPageState extends State<HomeConfigPage> {
                   controller: configVerController,
                   value: homeNotifier.configVersion,
                 ),
-                _buildRow(
-                  title: '酒店名',
-                  controller: hotelNameController,
-                  value: homeNotifier.hotelName,
-                ),
-                _buildRow(
-                  title: '房号',
-                  controller: roomNameController,
-                  value: homeNotifier.roomName,
-                ),
+                // _buildRow(
+                //   title: '酒店名',
+                //   controller: hotelNameController,
+                //   value: homeNotifier.hotelName,
+                // ),
+                // _buildRow(
+                //   title: '房号',
+                //   controller: roomNameController,
+                //   value: homeNotifier.roomName,
+                // ),
               ],
             ),
             Spacer(),
-            ConfigSection(
-              children: [
-                Row(
-                  children: [
-                    // 扫描按钮
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _isScanning ? null : scanNetwork,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue, // 按钮背景颜色
-                            foregroundColor: Colors.white, // 按钮文字颜色
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8), // 设置圆角
-                            ),
-                          ),
-                          child: Text(
-                            _isScanning ? '扫描中...' : '扫描',
-                          ),
-                        ),
-                      ],
-                    ),
-                    Spacer(),
-                    // IP 输入框
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 150),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "IP 地址",
-                          isDense: true,
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          border: OutlineInputBorder(),
-                        ),
-                        controller: ipController,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    // Port 输入框
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 80),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "端口",
-                          isDense: true,
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          border: OutlineInputBorder(),
-                        ),
-                        controller: portController,
-                      ),
-                    ),
-                    Spacer(),
-                    // 获取远程配置按钮
-                    ElevatedButton(
-                      onPressed: () {
-                        getRCUConfig(
-                            ipController.text, int.parse(portController.text));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // 按钮背景颜色
-                        foregroundColor: Colors.white, // 按钮文字颜色
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8), // 设置圆角
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.cloud_download),
-                          SizedBox(width: 6),
-                          Text('获取目标配置'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    // 发送
-                    ElevatedButton(
-                      onPressed: () {
-                        generateAndSendJson(ipController.text,
-                            int.parse(portController.text), context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // 按钮背景颜色
-                        foregroundColor: Colors.white, // 按钮文字颜色
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8), // 设置圆角
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.send_and_archive),
-                          SizedBox(width: 6),
-                          Text('下发配置'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // 扫描结果列表
-            Expanded(
-                child: homeNotifier.scannedIPs.isEmpty
-                    ? Center(child: Text(_isScanning ? '正在扫描...' : '未发现设备'))
-                    : Container(
-                        margin: EdgeInsets.all(8), // 外边距
-                        decoration: BoxDecoration(
-                          color: Colors.white, // 背景颜色
-                          borderRadius: BorderRadius.circular(8), // 圆角
-                        ),
-                        child: ListView.builder(
-                          itemCount: homeNotifier.scannedIPs.length,
-                          itemBuilder: (context, index) {
-                            final ipInfo = homeNotifier.scannedIPs[index];
-                            return ListTile(
-                              title: Text(ipInfo),
-                              onTap: () {
-                                final ip = ipInfo.split(' ')[0];
-                                setState(() {
-                                  ipController.text = ip; // 填充IP输入框
-                                });
-                              },
-                            );
-                          },
-                        ),
-                      )),
+            // ConfigSection(
+            //   children: [
+            //     Row(
+            //       children: [
+            //         // 扫描按钮
+            //         Row(
+            //           mainAxisAlignment: MainAxisAlignment.end,
+            //           children: [
+            //             ElevatedButton(
+            //               onPressed: _isScanning ? null : scanNetwork,
+            //               style: ElevatedButton.styleFrom(
+            //                 backgroundColor: Colors.blue, // 按钮背景颜色
+            //                 foregroundColor: Colors.white, // 按钮文字颜色
+            //                 shape: RoundedRectangleBorder(
+            //                   borderRadius: BorderRadius.circular(8), // 设置圆角
+            //                 ),
+            //               ),
+            //               child: Text(
+            //                 _isScanning ? '扫描中...' : '扫描',
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //         Spacer(),
+            //         // IP 输入框
+            //         ConstrainedBox(
+            //           constraints: BoxConstraints(maxWidth: 150),
+            //           child: TextField(
+            //             decoration: InputDecoration(
+            //               labelText: "IP 地址",
+            //               isDense: true,
+            //               contentPadding:
+            //                   EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            //               border: OutlineInputBorder(),
+            //             ),
+            //             controller: ipController,
+            //           ),
+            //         ),
+            //         SizedBox(width: 10),
+            //         // Port 输入框
+            //         ConstrainedBox(
+            //           constraints: BoxConstraints(maxWidth: 80),
+            //           child: TextField(
+            //             decoration: InputDecoration(
+            //               labelText: "端口",
+            //               isDense: true,
+            //               contentPadding:
+            //                   EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            //               border: OutlineInputBorder(),
+            //             ),
+            //             controller: portController,
+            //           ),
+            //         ),
+            //         Spacer(),
+            //         // 获取远程配置按钮
+            //         ElevatedButton(
+            //           onPressed: () {
+            //             getRCUConfig(
+            //                 ipController.text, int.parse(portController.text));
+            //           },
+            //           style: ElevatedButton.styleFrom(
+            //             backgroundColor: Colors.blue, // 按钮背景颜色
+            //             foregroundColor: Colors.white, // 按钮文字颜色
+            //             shape: RoundedRectangleBorder(
+            //               borderRadius: BorderRadius.circular(8), // 设置圆角
+            //             ),
+            //           ),
+            //           child: Row(
+            //             children: [
+            //               Icon(Icons.cloud_download),
+            //               SizedBox(width: 6),
+            //               Text('获取目标配置'),
+            //             ],
+            //           ),
+            //         ),
+            //         SizedBox(width: 10),
+            //         // 发送
+            //         ElevatedButton(
+            //           onPressed: () {
+            //             generateAndSendJson(ipController.text,
+            //                 int.parse(portController.text), context);
+            //           },
+            //           style: ElevatedButton.styleFrom(
+            //             backgroundColor: Colors.blue, // 按钮背景颜色
+            //             foregroundColor: Colors.white, // 按钮文字颜色
+            //             shape: RoundedRectangleBorder(
+            //               borderRadius: BorderRadius.circular(8), // 设置圆角
+            //             ),
+            //           ),
+            //           child: Row(
+            //             children: [
+            //               Icon(Icons.send_and_archive),
+            //               SizedBox(width: 6),
+            //               Text('下发配置'),
+            //             ],
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ],
+            // ),
+            // // 扫描结果列表
+            // Expanded(
+            //     child: homeNotifier.scannedIPs.isEmpty
+            //         ? Center(child: Text(_isScanning ? '正在扫描...' : '未发现设备'))
+            //         : Container(
+            //             margin: EdgeInsets.all(8), // 外边距
+            //             decoration: BoxDecoration(
+            //               color: Colors.white, // 背景颜色
+            //               borderRadius: BorderRadius.circular(8), // 圆角
+            //             ),
+            //             child: ListView.builder(
+            //               itemCount: homeNotifier.scannedIPs.length,
+            //               itemBuilder: (context, index) {
+            //                 final ipInfo = homeNotifier.scannedIPs[index];
+            //                 return ListTile(
+            //                   title: Text(ipInfo),
+            //                   onTap: () {
+            //                     final ip = ipInfo.split(' ')[0];
+            //                     setState(() {
+            //                       ipController.text = ip; // 填充IP输入框
+            //                     });
+            //                   },
+            //                 );
+            //               },
+            //             ),
+            //           )),
           ],
         ),
       ),
