@@ -91,22 +91,22 @@ class OtherDevice extends IDeviceBase {
 
   factory OtherDevice.fromJson(Map<String, dynamic> json) {
     final device = OtherDevice(
-      name: json['name'] as String,
+      name: json['nm'] as String,
       uid: (json['uid'] as num).toInt(),
-      type: OtherDeviceType.values[json['type'] as int],
-      causeState: json['causeState'] as String? ?? '',
-      // linkDeviceUids: (json['linkDeviceUids'] as List<dynamic>?)
+      type: OtherDeviceType.values[json['tp'] as int],
+      causeState: json['cauSt'] as String? ?? '',
+      // linkDeviceUids: (json['linkDUids'] as List<dynamic>?)
       //         ?.map((item) => (item as num).toInt())
       //         .toList() ??
       //     [],
-      repelDeviceUids: (json['repelDeviceUids'] as List<dynamic>?)
+      repelDeviceUids: (json['repelDUids'] as List<dynamic>?)
               ?.map((item) => (item as num).toInt())
               .toList() ??
           [],
     );
 
-    if (json.containsKey('outputUid') && json['outputUid'] != null) {
-      device.output = BoardManager().getOutputByUid(json['outputUid'] as int);
+    if (json.containsKey('oUid') && json['oUid'] != null) {
+      device.output = BoardManager().getOutputByUid(json['oUid'] as int);
     }
 
     return device;
@@ -116,8 +116,8 @@ class OtherDevice extends IDeviceBase {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'type': type.index,
-      if (_output != null) 'outputUid': _output!.uid
+      'tp': type.index,
+      if (_output != null) 'oUid': _output!.uid
     };
   }
 }

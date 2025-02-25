@@ -188,8 +188,8 @@ class AirCon extends IDeviceBase {
   factory AirCon.fromJson(Map<String, dynamic> json) {
     final airCon = AirCon(
         id: (json['id'] as num).toInt(),
-        type: ACType.values[json['type'] as int],
-        name: json['name'] as String,
+        type: ACType.values[json['tp'] as int],
+        name: json['nm'] as String,
         uid: (json['uid'] as num).toInt());
 
     if (airCon.type == ACType.single) {
@@ -213,7 +213,7 @@ class AirCon extends IDeviceBase {
     final json = {
       ...super.toJson(),
       'id': id,
-      'type': type.index,
+      'tp': type.index,
     };
 
     if (type == ACType.single) {

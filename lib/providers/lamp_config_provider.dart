@@ -54,16 +54,16 @@ class Lamp extends IDeviceBase {
   // Lamp的正反序列化
   factory Lamp.fromJson(Map<String, dynamic> json) {
     return Lamp(
-      name: json['name'] as String,
+      name: json['nm'] as String,
       uid: (json['uid'] as num).toInt(),
-      type: LampType.values[json['type'] as int],
-      output: BoardManager().getOutputByUid(json['outputUid'] as int),
-      causeState: json['causeState'] as String? ?? '',
-      linkDeviceUids: (json['linkDeviceUids'] as List<dynamic>?)
+      type: LampType.values[json['tp'] as int],
+      output: BoardManager().getOutputByUid(json['oUid'] as int),
+      causeState: json['cauSt'] as String? ?? '',
+      linkDeviceUids: (json['linkDUids'] as List<dynamic>?)
               ?.map((item) => (item as num).toInt())
               .toList() ??
           [],
-      repelDeviceUids: (json['repelDeviceUids'] as List<dynamic>?)
+      repelDeviceUids: (json['repelDUids'] as List<dynamic>?)
               ?.map((item) => (item as num).toInt())
               .toList() ??
           [],
@@ -74,8 +74,8 @@ class Lamp extends IDeviceBase {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'type': type.index,
-      'outputUid': _output.uid,
+      'tp': type.index,
+      'oUid': _output.uid,
     };
   }
 }

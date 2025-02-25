@@ -13,8 +13,3 @@ AtomicAction _$AtomicActionFromJson(Map<String, dynamic> json) => AtomicAction(
     );
 
 Map<String, dynamic> _$AtomicActionToJson(AtomicAction instance) =>
-    <String, dynamic>{
-      'deviceUid': instance.deviceUid,
-      'operation': instance.operation,
-      'parameter': instance.parameter,
-    };

@@ -1,13 +1,10 @@
 import 'package:flutter_web_1/commons/common_function.dart';
 import 'package:flutter_web_1/commons/managers.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-part 'interface.g.dart';
 
 // 最原子级的操作, 天了
 // 把它叫作Action, 就是说一个Action里含有的, 是target和operation
 
-@JsonSerializable()
 class AtomicAction {
   int deviceUid; // 此操作的目标设备的uid
   String operation; // 操作, 所属于目标设备的operations之中
@@ -31,9 +28,19 @@ class AtomicAction {
     DeviceManager().allDevices.values.first.addUsage();
   }
 
-  factory AtomicAction.fromJson(Map<String, dynamic> json) =>
-      _$AtomicActionFromJson(json);
-  Map<String, dynamic> toJson() => _$AtomicActionToJson(this);
+  factory AtomicAction.fromJson(Map<String, dynamic> json) => AtomicAction(
+        deviceUid: (json['dUid'] as num).toInt(),
+        operation: json['op'] as String,
+        parameter: json['pa'] as String,
+      );
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'dUid': deviceUid,
+      'op': operation,
+      'pa': parameter,
+    };
+  }
 }
 
 // 继承于IDeviceAction的类, 如灯, 窗帘什么的, 会被面板控制的设备
@@ -82,13 +89,13 @@ abstract class IDeviceBase with UsageCountMixin {
 
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      'nm': name,
       'uid': uid,
-      if (causeState.isNotEmpty) 'causeState': causeState,
-      if (linkDeviceUids.isNotEmpty) 'linkDeviceUids': linkDeviceUids,
-      if (repelDeviceUids.isNotEmpty) 'repelDeviceUids': repelDeviceUids,
-      'associatedButtons': _associatedButtons
-          .map((e) => {'panelId': e.panelId, 'buttonId': e.buttonId})
+      if (causeState.isNotEmpty) 'cauSt': causeState,
+      if (linkDeviceUids.isNotEmpty) 'linkDUids': linkDeviceUids,
+      if (repelDeviceUids.isNotEmpty) 'repelDUids': repelDeviceUids,
+      'assBtns': _associatedButtons
+          .map((e) => {'pId': e.panelId, 'bId': e.buttonId})
           .toList(),
     };
   }
@@ -106,8 +113,7 @@ abstract class ActionGroupBase {
   final int uid;
   List<AtomicAction> atomicActions;
 
-  ActionGroupBase(
-      {required this.uid, required this.atomicActions});
+  ActionGroupBase({required this.uid, required this.atomicActions});
 
   void remove() {
     ActionGroupManager().removeActionGroup(uid);
@@ -117,7 +123,7 @@ abstract class ActionGroupBase {
   Map<String, dynamic> toJson() {
     return {
       'uid': uid,
-      'atomicActions': atomicActions.map((e) => e.toJson()).toList(),
+      'atoActs': atomicActions.map((e) => e.toJson()).toList(),
     };
   }
 

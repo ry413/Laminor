@@ -55,13 +55,13 @@ class PanelButtonActionGroup extends ActionGroupBase {
   factory PanelButtonActionGroup.fromJson(Map<String, dynamic> json) {
     return PanelButtonActionGroup(
       uid: json['uid'] as int,
-      atomicActions: (json['atomicActions'] as List<dynamic>)
+      atomicActions: (json['atoActs'] as List<dynamic>)
           .map((e) => AtomicAction.fromJson(e as Map<String, dynamic>))
           .toList(),
       pressedPolitAction:
-          ButtonPolitAction.values[(json['pressedPolitAction'] as num).toInt()],
-      pressedOtherPolitAction: ButtonOtherPolitAction
-          .values[(json['pressedOtherPolitAction'] as num).toInt()],
+          ButtonPolitAction.values[(json['pPAct'] as num).toInt()],
+      pressedOtherPolitAction:
+          ButtonOtherPolitAction.values[(json['pOPAct'] as num).toInt()],
     );
   }
 
@@ -70,8 +70,8 @@ class PanelButtonActionGroup extends ActionGroupBase {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'pressedPolitAction': pressedPolitAction.index,
-      'pressedOtherPolitAction': pressedOtherPolitAction.index,
+      'pPAct': pressedPolitAction.index,
+      'pOPAct': pressedOtherPolitAction.index,
     };
   }
 }
@@ -96,13 +96,12 @@ class PanelButton extends InputBase {
   factory PanelButton.fromJson(Map<String, dynamic> json) {
     final button = PanelButton(
       id: (json['id'] as num).toInt(),
-      name: json['name'] as String? ?? '',
-      actionGroups: (json['actionGroups'] as List<dynamic>)
+      name: json['nm'] as String? ?? '',
+      actionGroups: (json['actGps'] as List<dynamic>)
           .map(
               (e) => PanelButtonActionGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
-      explicitAssociatedDeviceUid:
-          (json['explicitAssociatedDeviceUid'] as num?)?.toInt() ?? -1,
+      explicitAssociatedDeviceUid: (json['eADUid'] as num?)?.toInt() ?? -1,
     );
     button.modeName = json['modeName'] as String?;
     for (var actionGroup in button.actionGroups) {
@@ -115,10 +114,10 @@ class PanelButton extends InputBase {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'actionGroups': actionGroups.map((e) => e.toJson()).toList(),
+      'nm': name,
+      'actGps': actionGroups.map((e) => e.toJson()).toList(),
       if (explicitAssociatedDeviceUid != -1)
-        'explicitAssociatedDeviceUid': explicitAssociatedDeviceUid,
+        'eADUid': explicitAssociatedDeviceUid,
       if (modeName != null && modeName != '') 'modeName': modeName,
     };
   }
@@ -148,7 +147,15 @@ class Panel {
 
   // Panel的正反序列化
   factory Panel.fromJson(Map<String, dynamic> json) {
-    final panel = _$PanelFromJson(json);
+    final panel = Panel(
+      id: (json['id'] as num).toInt(),
+      type: Panel._panelTypeFromJson((json['tp'] as num).toInt()),
+      name: json['nm'] as String,
+      buttons: (json['btns'] as List<dynamic>)
+          .map((e) => PanelButton.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
     for (var button in panel.buttons) {
       button.hostPanel = panel;
     }
@@ -201,7 +208,12 @@ class Panel {
       }
     }
     // 上面只是把数据准备好, 不在这里操作, 而是等各个设备自己的toJson
-    return _$PanelToJson(this);
+    return <String, dynamic>{
+      'id': id,
+      'tp': Panel._panelTypeToJson(type),
+      'nm': name,
+      'btns': buttons,
+    };
   }
 
   // PanelType的正反序列化

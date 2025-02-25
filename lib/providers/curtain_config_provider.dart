@@ -41,11 +41,11 @@ class Curtain extends IDeviceBase {
 
   factory Curtain.fromJson(Map<String, dynamic> json) {
     return Curtain(
-      name: json['name'] as String,
+      name: json['nm'] as String,
       uid: (json['uid'] as num).toInt(),
-      outputOpen: BoardManager().getOutputByUid(json['outputOpenUid'] as int),
-      outputClose: BoardManager().getOutputByUid(json['outputCloseUid'] as int),
-      runDuration: json['runDuration'] as int,
+      outputOpen: BoardManager().getOutputByUid(json['oOUid'] as int),
+      outputClose: BoardManager().getOutputByUid(json['oCUid'] as int),
+      runDuration: json['runDur'] as int,
     );
   }
 
@@ -53,9 +53,9 @@ class Curtain extends IDeviceBase {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'outputOpenUid': outputOpen.uid,
-      'outputCloseUid': outputClose.uid,
-      'runDuration': runDuration,
+      'oOUid': outputOpen.uid,
+      'oCUid': outputClose.uid,
+      'runDur': runDuration,
     };
   }
 }

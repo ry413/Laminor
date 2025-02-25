@@ -6,8 +6,6 @@ import 'package:flutter_web_1/commons/managers.dart';
 import 'package:flutter_web_1/uid_manager.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'board_config_provider.g.dart';
-
 enum OutputType { relay, dryContact, dimming }
 
 extension OutputTypeExtension on OutputType {
@@ -40,11 +38,9 @@ extension InputTypeExtension on InputType {
 }
 
 // 板子上的一个输出
-@JsonSerializable()
 class BoardOutput with UsageCountMixin {
   int hostBoardId; // 电路所在的板子的ID
 
-  @JsonKey(fromJson: _outputTypeFromJson, toJson: _outputTypeToJson)
   OutputType type;
   int channel;
   String name;
@@ -59,9 +55,23 @@ class BoardOutput with UsageCountMixin {
   });
 
   // BoardOutput的正反序列化
-  factory BoardOutput.fromJson(Map<String, dynamic> json) =>
-      _$BoardOutputFromJson(json);
-  Map<String, dynamic> toJson() => _$BoardOutputToJson(this);
+  factory BoardOutput.fromJson(Map<String, dynamic> json) => BoardOutput(
+        type: BoardOutput._outputTypeFromJson((json['tp'] as num).toInt()),
+        channel: (json['ch'] as num).toInt(),
+        name: json['nm'] as String,
+        hostBoardId: (json['hBId'] as num).toInt(),
+        uid: (json['uid'] as num).toInt(),
+      );
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'hBId': hostBoardId,
+      'tp': BoardOutput._outputTypeToJson(type),
+      'ch': channel,
+      'nm': name,
+      'uid': uid,
+    };
+  }
 
   // OutputType的正反序列化
   static OutputType _outputTypeFromJson(int index) => OutputType.values[index];
@@ -78,7 +88,7 @@ class InputActionGroup extends ActionGroupBase {
   factory InputActionGroup.fromJson(Map<String, dynamic> json) {
     final actionGroup = InputActionGroup(
       uid: json['uid'] as int,
-      atomicActions: (json['atomicActions'] as List<dynamic>)
+      atomicActions: (json['atoActs'] as List<dynamic>)
           .map((e) => AtomicAction.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
@@ -89,12 +99,9 @@ class InputActionGroup extends ActionGroupBase {
 }
 
 // 板子上的一个输入
-@JsonSerializable()
 class BoardInput extends InputBase {
   int hostBoardId;
   int channel;
-
-  @JsonKey(fromJson: _inputTypeFromJson, toJson: _inputTypeToJson)
   InputType inputType;
 
   int? infraredDuration; // 反正, 是红外检测时, 多久没检测到人就关闭设备的'多久'
@@ -112,26 +119,26 @@ class BoardInput extends InputBase {
   // BoardInput的正反序列化
   factory BoardInput.fromJson(Map<String, dynamic> json) {
     final input = BoardInput(
-      channel: (json['channel'] as num).toInt(),
-      inputType: BoardInput._inputTypeFromJson((json['inputType'] as num).toInt()),
-      hostBoardId: (json['hostBoardId'] as num).toInt(),
-      actionGroups: (json['actionGroups'] as List<dynamic>)
+      channel: (json['ch'] as num).toInt(),
+      inputType: BoardInput._inputTypeFromJson((json['iTp'] as num).toInt()),
+      hostBoardId: (json['hBId'] as num).toInt(),
+      actionGroups: (json['actGps'] as List<dynamic>)
           .map((e) => InputActionGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
-    input.infraredDuration = (json['infraredDuration'] as num?)?.toInt();
+    input.infraredDuration = (json['infDu'] as num?)?.toInt();
     input.modeName = json['modeName'] as String?;
 
     return input;
   }
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'hostBoardId': hostBoardId,
-      'channel': channel,
-      'inputType': BoardInput._inputTypeToJson(inputType),
-      'actionGroups': actionGroups,
+      'hBId': hostBoardId,
+      'ch': channel,
+      'iTp': BoardInput._inputTypeToJson(inputType),
+      'actGps': actionGroups,
       if (modeName != null && modeName != '') 'modeName': modeName,
-      if (infraredDuration != null) 'infraredDuration': infraredDuration,
+      if (infraredDuration != null) 'infDu': infraredDuration,
     };
   }
 
@@ -165,9 +172,17 @@ class BoardConfig {
   }
 
   // BoardConfig的正反序列化
-  factory BoardConfig.fromJson(Map<String, dynamic> json) =>
-      _$BoardConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$BoardConfigToJson(this);
+  factory BoardConfig.fromJson(Map<String, dynamic> json) => BoardConfig(
+        id: (json['id'] as num).toInt(),
+      )..outputs = BoardConfig._outputsFromJson(json['os'] as List);
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'os': BoardConfig._outputsToJson(outputs),
+      'is': inputs,
+    };
+  }
 
   void loadInputsFromJson(List<dynamic> inputsJson) {
     inputs = inputsJson

@@ -56,6 +56,7 @@ mixin UsageCountMixin {
 }
 
 Future<void> parseJsonString(String jsonString, BuildContext context) async {
+  String phase = "一般配置";
   try {
     // 解析 JSON 字符串
     final Map<String, dynamic> jsonData = jsonDecode(jsonString);
@@ -68,6 +69,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         Provider.of<HomePageNotifier>(context, listen: false);
     homeConfigNotifier.fromJson(jsonData['一般配置']);
 
+    phase = "板子列表";
     final boardConfigNotifier =
         Provider.of<BoardConfigNotifier>(context, listen: false);
     // 这里不会反序列化inputs, 而是到设备们反序列化完了才到它
@@ -76,12 +78,14 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     boardConfigNotifier.deserializationUpdate(newBoards);
 
+    phase = "灯列表";
     final lampConfigNotifier =
         Provider.of<LampNotifier>(context, listen: false);
     final newLamps =
         (jsonData['灯列表'] as List).map((item) => Lamp.fromJson(item)).toList();
     lampConfigNotifier.deserializationUpdate(newLamps);
 
+    phase = "空调配置";
     final acConfigNotifier =
         Provider.of<AirConNotifier>(context, listen: false);
     acConfigNotifier.fromJson(jsonData['空调通用配置']);
@@ -90,6 +94,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     acConfigNotifier.deserializationUpdate(newAirCons);
 
+    phase = "窗帘列表";
     final curtainConfigNotifier =
         Provider.of<CurtainNotifier>(context, listen: false);
     final newCurtains = (jsonData['窗帘列表'] as List)
@@ -97,6 +102,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     curtainConfigNotifier.deserializationUpdate(newCurtains);
 
+    phase = "其他设备列表";
     final otherDeviceNotifier =
         Provider.of<OtherDeviceNotifier>(context, listen: false);
     final newOtherDevice = (jsonData['其他设备列表'] as List)
@@ -104,6 +110,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     otherDeviceNotifier.deserializationUpdate(newOtherDevice);
 
+    phase = "485指令列表";
     final rs485CommandNotifier =
         Provider.of<RS485ConfigNotifier>(context, listen: false);
     final newCommands = (jsonData['485指令码列表'] as List)
@@ -111,6 +118,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
         .toList();
     rs485CommandNotifier.deserializationUpdate(newCommands);
 
+    phase = "语音指令列表";
     final voiceCommandNotifier =
         Provider.of<VoiceConfigNotifier>(context, listen: false);
     final newVoiceCommands = (jsonData['语音指令列表'] as List)
@@ -119,12 +127,14 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
     voiceCommandNotifier.deserializationUpdate(newVoiceCommands);
 
     // 到这里再解析inputs
+    phase = "板子输入列表";
     final boardListJson = (jsonData['板子列表'] as List);
     for (int i = 0; i < newBoards.length; i++) {
       final boardJson = boardListJson[i] as Map<String, dynamic>;
-      newBoards[i].loadInputsFromJson(boardJson['inputs'] as List<dynamic>);
+      newBoards[i].loadInputsFromJson(boardJson['is'] as List<dynamic>);
     }
 
+    phase = "面板列表";
     final panelConfigNotifier =
         Provider.of<PanelConfigNotifier>(context, listen: false);
     final newPanels =
@@ -141,7 +151,7 @@ Future<void> parseJsonString(String jsonString, BuildContext context) async {
   } catch (e) {
     // 提示解析错误
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("解析 JSON 数据失败: $e"),
+      content: Text("解析 JSON 数据失败: $e, $phase"),
       duration: Duration(seconds: 1),
     ));
   }

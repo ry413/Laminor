@@ -37,9 +37,9 @@ class VoiceCommand extends InputBase {
 
   factory VoiceCommand.fromJson(Map<String, dynamic> json) {
     return VoiceCommand(
-      name: json['name'] as String,
+      name: json['nm'] as String,
       code: json['code'] as String,
-      actionGroups: (json['actionGroups'] as List<dynamic>)
+      actionGroups: (json['actGps'] as List<dynamic>)
           .map((e) => VoiceActionGroup.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
@@ -47,9 +47,9 @@ class VoiceCommand extends InputBase {
 
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      'nm': name,
       'code': code,
-      'actionGroups': actionGroups,
+      'actGps': actionGroups,
     };
   }
 }
